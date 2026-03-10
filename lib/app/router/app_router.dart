@@ -26,6 +26,7 @@ import '../../features/student/presentation/evaluation_page.dart';
 import '../../features/student/presentation/progress_page.dart';
 import '../../features/student/presentation/badges_page.dart';
 import '../../features/student/presentation/student_profile_page.dart';
+import '../../features/student/presentation/avatar_selection_page.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -70,6 +71,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(path: '/login-educator', builder: (context, state) => const EducatorLoginPage()),
       GoRoute(path: '/register', builder: (context, state) => const RegisterPage()),
+      GoRoute(
+        path: '/student/avatar-select',
+        builder: (context, state) => const AvatarSelectionPage(),
+      ),
 
       ShellRoute(
         builder: (context, state, child) => StudentShell(child: child),

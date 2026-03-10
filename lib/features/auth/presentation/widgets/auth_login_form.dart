@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../application/auth_state.dart';
 
@@ -142,9 +143,17 @@ class _AuthLoginFormState extends ConsumerState<AuthLoginForm> {
     await ref.read(authControllerProvider.notifier).login(email: email, password: password);
 
     if (!mounted) return;
-    final msg = ref.read(authControllerProvider).errorMessage;
-    if (msg != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    final auth = ref.read(authControllerProvider);
+    if (auth.errorMessage != null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(auth.errorMessage!)));
+      return;
+    }
+
+    if (auth.isAuthenticated && auth.role == UserRole.student) {
+      // For now, always send logged-in students to avatar selection.
+      // Later this can be gated by a "hasAvatar" flag on the user profile.
+      context.go('/student/avatar-select');
     }
   }
 }
