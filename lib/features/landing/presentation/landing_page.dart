@@ -32,7 +32,7 @@ class LandingPage extends StatelessWidget {
                 label: 'Educator',
                 background: const Color(0xFF0B3B66),
                 foreground: Colors.white,
-                onTap: () => context.go('/login'),
+                onTap: () => context.go('/login-educator'),
               ),
               const SizedBox(height: 120),
             ],

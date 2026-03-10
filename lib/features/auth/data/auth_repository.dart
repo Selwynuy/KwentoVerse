@@ -70,6 +70,7 @@ class AuthRepository {
     return switch (role) {
       UserRole.student => 'student',
       UserRole.educator => 'educator',
+      UserRole.principal => 'principal',
       UserRole.admin => 'admin',
     };
   }
@@ -80,11 +81,30 @@ class AuthRepository {
         return UserRole.student;
       case 'educator':
         return UserRole.educator;
+      case 'principal':
+        return UserRole.principal;
       case 'admin':
         return UserRole.admin;
       default:
         return null;
     }
+  }
+
+  // Principal upgrade flow (to be wired up later).
+  Future<void> requestPrincipalUpgrade(String educatorId) async {
+    await _client.from('principal_requests').insert({
+      'educator_id': educatorId,
+    });
+  }
+
+  Future<void> approvePrincipalUpgrade({
+    required String requestId,
+    required String adminId,
+  }) async {
+    await _client.from('principal_requests').update({
+      'status': 'approved',
+      'reviewer_admin_id': adminId,
+    }).eq('id', requestId);
   }
 }
 

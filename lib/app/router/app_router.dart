@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/application/auth_state.dart';
 import '../../features/auth/presentation/login_page.dart';
+import '../../features/auth/presentation/educator_login_page.dart';
 import '../../features/auth/presentation/onboarding_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/landing/presentation/landing_page.dart';
@@ -53,7 +54,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       // Guard wrong shell access (minimal; refine later).
       if (isLoggedIn && role != null) {
         if (path.startsWith('/student') && role != UserRole.student) return _homeFor(role);
-        if (path.startsWith('/educator') && role != UserRole.educator) return _homeFor(role);
+        if (path.startsWith('/educator') &&
+            role != UserRole.educator &&
+            role != UserRole.principal) {
+          return _homeFor(role);
+        }
         if (path.startsWith('/admin') && role != UserRole.admin) return _homeFor(role);
       }
 
@@ -63,6 +68,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/', builder: (context, state) => const LandingPage()),
       GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingPage()),
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+      GoRoute(path: '/login-educator', builder: (context, state) => const EducatorLoginPage()),
       GoRoute(path: '/register', builder: (context, state) => const RegisterPage()),
 
       ShellRoute(
@@ -129,6 +135,7 @@ String _homeFor(UserRole role) {
   return switch (role) {
     UserRole.student => '/student/home',
     UserRole.educator => '/educator/home',
+    UserRole.principal => '/educator/home',
     UserRole.admin => '/admin/educators',
   };
 }

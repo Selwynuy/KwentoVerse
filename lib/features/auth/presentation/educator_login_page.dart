@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import 'widgets/auth_login_form.dart';
 
-class LoginPage extends ConsumerWidget {
-  const LoginPage({super.key});
+class EducatorLoginPage extends ConsumerWidget {
+  const EducatorLoginPage({super.key});
+
+  static const _primary = Color(0xFF0B3B66);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -35,12 +37,22 @@ class LoginPage extends ConsumerWidget {
                   filterQuality: FilterQuality.none,
                 ),
                 const SizedBox(height: 24),
+                const Text(
+                  'KwentoVerse',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                    color: _primary,
+                  ),
+                ),
+                const SizedBox(height: 24),
                 AuthLoginForm(
-                  title: 'LOGIN',
-                  primaryColor: const Color(0xFFF59E0B),
+                  title: 'EDUCATOR LOGIN',
+                  primaryColor: _primary,
                   buttonText: 'Login',
-                  toggleText: 'or register',
-                  onToggle: () => context.go('/register'),
+                  toggleText: 'or student login',
+                  onToggle: () => context.go('/login'),
                 ),
                 const SizedBox(height: 8),
               ],

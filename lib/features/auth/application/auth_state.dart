@@ -4,7 +4,7 @@ import '../../../core/supabase/supabase_providers.dart';
 import '../data/auth_repository.dart';
 import 'auth_error_mapper.dart';
 
-enum UserRole { student, educator, admin }
+enum UserRole { student, educator, principal, admin }
 
 class AuthState {
   const AuthState({
