@@ -56,81 +56,38 @@ class _AvatarSelectionPageState extends State<AvatarSelectionPage> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const SizedBox(height: 16),
+                      // Large preview of selected avatar
+                      _SelectedAvatarPreview(
+                        selectedIndex: _selectedIndex,
+                        accent: accent,
+                      ),
+                      const SizedBox(height: 20),
                       const Text(
-                        'SELECT YOUR AVATAR',
+                        'Select your avatar',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.1,
-                          color: accent,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 24),
                       Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _AvatarCircle(
-                                  index: 0,
-                                  isSelected: _selectedIndex == 0,
-                                  accent: accent,
-                                  onTap: () =>
-                                      setState(() => _selectedIndex = 0),
-                                ),
-                                _AvatarCircle(
-                                  index: 1,
-                                  isSelected: _selectedIndex == 1,
-                                  accent: accent,
-                                  onTap: () =>
-                                      setState(() => _selectedIndex = 1),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 32),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _AvatarCircle(
-                                  index: 2,
-                                  isSelected: _selectedIndex == 2,
-                                  accent: accent,
-                                  onTap: () =>
-                                      setState(() => _selectedIndex = 2),
-                                ),
-                                _AvatarCircle(
-                                  index: 3,
-                                  isSelected: _selectedIndex == 3,
-                                  accent: accent,
-                                  onTap: () =>
-                                      setState(() => _selectedIndex = 3),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 32),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _AvatarCircle(
-                                  index: 4,
-                                  isSelected: _selectedIndex == 4,
-                                  accent: accent,
-                                  onTap: () =>
-                                      setState(() => _selectedIndex = 4),
-                                ),
-                                _AvatarCircle(
-                                  index: 5,
-                                  isSelected: _selectedIndex == 5,
-                                  accent: accent,
-                                  onTap: () =>
-                                      setState(() => _selectedIndex = 5),
-                                ),
-                              ],
-                            ),
-                          ],
+                        child: GridView.count(
+                          shrinkWrap: true,
+                          crossAxisCount: 3,
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          childAspectRatio: 1,
+                          padding: EdgeInsets.zero,
+                          children: List.generate(6, (index) {
+                            return _AvatarCircle(
+                              index: index,
+                              isSelected: _selectedIndex == index,
+                              accent: accent,
+                              onTap: () => setState(() => _selectedIndex = index),
+                            );
+                          }),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -177,6 +134,39 @@ class _AvatarSelectionPageState extends State<AvatarSelectionPage> {
           onLogout: () => context.go('/login'),
         ),
       ],
+    );
+  }
+}
+
+class _SelectedAvatarPreview extends StatelessWidget {
+  const _SelectedAvatarPreview({
+    required this.selectedIndex,
+    required this.accent,
+  });
+
+  final int? selectedIndex;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: accent.withOpacity(0.15),
+        border: Border.all(color: accent, width: 3),
+      ),
+      child: CircleAvatar(
+        backgroundColor: Colors.grey.shade200,
+        child: Icon(
+          selectedIndex != null
+              ? _avatarIconFor(selectedIndex!)
+              : Icons.person_outline_rounded,
+          size: 56,
+          color: Colors.black87,
+        ),
+      ),
     );
   }
 }
