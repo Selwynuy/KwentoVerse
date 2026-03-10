@@ -14,8 +14,8 @@ class StudentShell extends ConsumerStatefulWidget {
 
   static const _tabs = [
     ('Library', '/student/library', Icons.menu_book_rounded),
-    ('Home', '/student/home', Icons.home_rounded),
-    ('Progress', '/student/progress', Icons.insights_rounded),
+    ('My School', '/student/home', Icons.home_rounded),
+    ('Search', '/student/search', Icons.search_rounded),
   ];
 
   @override

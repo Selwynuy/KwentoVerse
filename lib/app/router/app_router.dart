@@ -27,6 +27,7 @@ import '../../features/student/presentation/progress_page.dart';
 import '../../features/student/presentation/badges_page.dart';
 import '../../features/student/presentation/student_profile_page.dart';
 import '../../features/student/presentation/avatar_selection_page.dart';
+import '../../features/student/presentation/student_search_page.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -81,6 +82,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: '/student/home', builder: (context, state) => const StudentHomePage()),
           GoRoute(path: '/student/library', builder: (context, state) => const StoryLibraryPage()),
+          GoRoute(path: '/student/search', builder: (context, state) => const StudentSearchPage()),
           GoRoute(
             path: '/student/story/:id',
             builder: (context, state) => StoryDetailsPage(storyId: state.pathParameters['id']!),
