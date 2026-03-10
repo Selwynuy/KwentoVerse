@@ -13,8 +13,8 @@ class StudentShell extends ConsumerStatefulWidget {
   final Widget child;
 
   static const _tabs = [
-    ('Library', '/student/library', Icons.menu_book_rounded),
-    ('My School', '/student/home', Icons.home_rounded),
+    ('Library', '/student/library', Icons.library_books_rounded),
+    ('My School', '/student/home', Icons.groups_rounded),
     ('Search', '/student/search', Icons.search_rounded),
   ];
 

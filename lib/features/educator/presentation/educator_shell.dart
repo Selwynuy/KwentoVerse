@@ -12,7 +12,7 @@ class EducatorShell extends ConsumerWidget {
 
   static const _tabs = [
     ('Library', '/educator/stories', Icons.library_books_rounded),
-    ('My School', '/educator/home', Icons.home_rounded),
+    ('My School', '/educator/home', Icons.groups_rounded),
     ('Search', '/educator/stories', Icons.search_rounded),
   ];
 
