@@ -1,50 +1,89 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kwentoverse/widgets/hamburger_menu_overlay.dart';
+import 'package:kwentoverse/widgets/student_navbar.dart';
 
+import '../../../shared/widgets/kwento_bottom_nav_bar.dart';
 import '../../auth/application/auth_state.dart';
 
-class StudentShell extends ConsumerWidget {
+class StudentShell extends ConsumerStatefulWidget {
   const StudentShell({super.key, required this.child});
 
   final Widget child;
 
   static const _tabs = [
-    ('Home', '/student/home', Icons.home),
-    ('Library', '/student/library', Icons.menu_book),
-    ('Progress', '/student/progress', Icons.insights),
-    ('Badges', '/student/badges', Icons.emoji_events),
-    ('Profile', '/student/profile', Icons.person),
+    ('Library', '/student/library', Icons.menu_book_rounded),
+    ('Home', '/student/home', Icons.home_rounded),
+    ('Progress', '/student/progress', Icons.insights_rounded),
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<StudentShell> createState() => _StudentShellState();
+}
+
+class _StudentShellState extends ConsumerState<StudentShell> {
+  bool _isMenuOpen = false;
+
+  // TODO: replace with real student profile data from Supabase.
+  final String _studentName = 'Student';
+  final String _studentLevel = 'Level: Worm';
+  final String? _avatarUrl = null;
+
+  void _toggleMenu() {
+    setState(() {
+      _isMenuOpen = !_isMenuOpen;
+    });
+  }
+
+  void _closeMenu() {
+    setState(() {
+      _isMenuOpen = false;
+    });
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    await ref.read(authControllerProvider.notifier).logout();
+    if (context.mounted) context.go('/login');
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
-    final idx = _tabs.indexWhere((t) => location.startsWith(t.$2));
+    final idx = StudentShell._tabs.indexWhere((t) => location.startsWith(t.$2));
     final currentIndex = idx < 0 ? 0 : idx;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('KwentoVerse'),
-        actions: [
-          IconButton(
-            tooltip: 'Logout',
-            onPressed: () async {
-              await ref.read(authControllerProvider.notifier).logout();
-              if (context.mounted) context.go('/login');
-            },
-            icon: const Icon(Icons.logout),
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: StudentNavbar(
+            displayName: _studentName,
+            levelLabel: _studentLevel,
+            avatarUrl: _avatarUrl,
+            onMenuTap: _toggleMenu,
           ),
-        ],
-      ),
-      body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
-        onDestinationSelected: (i) => context.go(_tabs[i].$2),
-        destinations: [
-          for (final t in _tabs) NavigationDestination(icon: Icon(t.$3), label: t.$1),
-        ],
-      ),
+          body: widget.child,
+          bottomNavigationBar: KwentoBottomNavBar(
+            currentIndex: currentIndex,
+            items: [
+              for (final t in StudentShell._tabs)
+                KwentoBottomNavBarItem(
+                  icon: t.$3,
+                  label: t.$1,
+                  onTap: () => context.go(t.$2),
+                ),
+            ],
+          ),
+        ),
+        HamburgerMenuOverlay(
+          isOpen: _isMenuOpen,
+          onClose: _closeMenu,
+          onProfile: () => context.go('/student/profile'),
+          onProgress: () => context.go('/student/progress'),
+          onNotifications: () => context.go('/student/home'),
+          onLogout: () => _handleLogout(context),
+        ),
+      ],
     );
   }
 }

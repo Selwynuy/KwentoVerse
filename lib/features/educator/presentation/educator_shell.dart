@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/kwento_bottom_nav_bar.dart';
 import '../../auth/application/auth_state.dart';
 
 class EducatorShell extends ConsumerWidget {
@@ -10,9 +11,9 @@ class EducatorShell extends ConsumerWidget {
   final Widget child;
 
   static const _tabs = [
-    ('Dashboard', '/educator/home', Icons.dashboard),
-    ('Stories', '/educator/stories', Icons.library_books),
-    ('Profile', '/educator/profile', Icons.person),
+    ('Library', '/educator/stories', Icons.library_books_rounded),
+    ('My School', '/educator/home', Icons.home_rounded),
+    ('Search', '/educator/stories', Icons.search_rounded),
   ];
 
   @override
@@ -36,11 +37,15 @@ class EducatorShell extends ConsumerWidget {
         ],
       ),
       body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
-        onDestinationSelected: (i) => context.go(_tabs[i].$2),
-        destinations: [
-          for (final t in _tabs) NavigationDestination(icon: Icon(t.$3), label: t.$1),
+      bottomNavigationBar: KwentoBottomNavBar(
+        currentIndex: currentIndex,
+        items: [
+          for (final t in _tabs)
+            KwentoBottomNavBarItem(
+              icon: t.$3,
+              label: t.$1,
+              onTap: () => context.go(t.$2),
+            ),
         ],
       ),
     );
