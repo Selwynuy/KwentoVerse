@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:kwentoverse/widgets/hamburger_menu_overlay.dart';
-import 'package:kwentoverse/widgets/student_navbar.dart';
 
 class AvatarSelectionPage extends StatefulWidget {
   const AvatarSelectionPage({super.key});
@@ -12,39 +10,14 @@ class AvatarSelectionPage extends StatefulWidget {
 
 class _AvatarSelectionPageState extends State<AvatarSelectionPage> {
   int? _selectedIndex;
-  bool _isMenuOpen = false;
-
-  final String _studentName = 'Ayeeshah';
-  final String _studentLevel = 'Level: Worm';
-  final String? _avatarUrl = null;
-
-  void _toggleMenu() {
-    setState(() {
-      _isMenuOpen = !_isMenuOpen;
-    });
-  }
-
-  void _closeMenu() {
-    setState(() {
-      _isMenuOpen = false;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     const accent = Color(0xFFF59E0B);
 
-    return Stack(
-      children: [
-        Scaffold(
-          backgroundColor: Colors.white,
-          appBar: StudentNavbar(
-            displayName: _studentName,
-            levelLabel: _studentLevel,
-            avatarUrl: _avatarUrl,
-            onMenuTap: _toggleMenu,
-          ),
-          body: SafeArea(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
             child: Align(
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
@@ -124,16 +97,6 @@ class _AvatarSelectionPageState extends State<AvatarSelectionPage> {
               ),
             ),
           ),
-        ),
-        HamburgerMenuOverlay(
-          isOpen: _isMenuOpen,
-          onClose: _closeMenu,
-          onProfile: () => context.go('/student/profile'),
-          onProgress: () => context.go('/student/progress'),
-          onNotifications: () => context.go('/student/home'),
-          onLogout: () => context.go('/login'),
-        ),
-      ],
     );
   }
 }
