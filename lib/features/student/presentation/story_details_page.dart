@@ -22,7 +22,6 @@ class _StoryDetailsPageState extends ConsumerState<StoryDetailsPage> {
   int _rating = 0;
   bool _isInLibrary = false;
   bool _ratingSubmitted = false;
-  bool _downloadedForOffline = false;
 
   void _onBack(BuildContext context) {
     final router = GoRouter.of(context);
@@ -125,6 +124,32 @@ class _StoryDetailsPageState extends ConsumerState<StoryDetailsPage> {
                                   ),
                                 ),
                               ],
+                            ),
+                            const SizedBox(height: 10),
+                            Builder(
+                              builder: (context) {
+                                final isAvailableOffline = DownloadedStoryCache.instance.get(story.id) != null;
+                                return _PillButton(
+                                  label: isAvailableOffline ? 'Available offline' : 'Download for offline',
+                                  icon: isAvailableOffline ? Icons.offline_pin_rounded : Icons.download_rounded,
+                                  filled: false,
+                                  onTap: () {
+                                    if (!isAvailableOffline) {
+                                      DownloadedStoryCache.instance.put(story);
+                                      setState(() {});
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Downloaded. You can read this book offline.'),
+                                            duration: Duration(seconds: 2),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  height: 44,
+                                );
+                              },
                             ),
                             const SizedBox(height: 14),
                             Text('Description', style: StudentTheme.sectionHeader),
