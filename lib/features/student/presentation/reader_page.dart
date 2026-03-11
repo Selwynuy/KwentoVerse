@@ -25,6 +25,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   int _pageIndex = 0;
   bool _isSpeaking = false;
   double _rate = 0.48;
+  bool _showCompletionCta = false;
 
   void _onBack(BuildContext context) {
     final router = GoRouter.of(context);
@@ -83,91 +84,161 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
 
   @override
   Widget build(BuildContext context) {
-    final story = ref.watch(storyByIdProvider(widget.storyId));
-    if (story == null) {
-      return Scaffold(
+    final storyAsync = ref.watch(storyByIdProvider(widget.storyId));
+
+    return storyAsync.when(
+      loading: () => Scaffold(
         backgroundColor: StudentTheme.surfaceCream,
         appBar: AppBar(
           title: const Text('Reader'),
           backgroundColor: StudentTheme.surfaceCream,
           elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: StudentTheme.titleDark),
+            onPressed: () => _onBack(context),
+          ),
         ),
-        body: const Center(child: Text('Story not found')),
-      );
-    }
-
-    final paragraphs = story.paragraphs;
-    final total = paragraphs.isEmpty ? 1 : paragraphs.length;
-    final currentText = paragraphs.isEmpty ? '' : paragraphs[_pageIndex.clamp(0, total - 1)];
-
-    return Scaffold(
-      backgroundColor: StudentTheme.surfaceCream,
-      appBar: AppBar(
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, _) => Scaffold(
         backgroundColor: StudentTheme.surfaceCream,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: StudentTheme.titleDark),
-          onPressed: () => _onBack(context),
-        ),
-        title: Text(
-          story.title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: StudentTheme.titleDark, fontWeight: FontWeight.w700, fontSize: 15),
-        ),
-        actions: [
-          IconButton(
-            tooltip: _isSpeaking ? 'Stop' : 'Read aloud',
-            onPressed: () => _toggleReadAloud(currentText),
-            icon: Icon(
-              _isSpeaking ? Icons.stop_rounded : Icons.volume_up_rounded,
-              color: StudentTheme.primaryOrange,
-            ),
+        appBar: AppBar(
+          title: const Text('Reader'),
+          backgroundColor: StudentTheme.surfaceCream,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: StudentTheme.titleDark),
+            onPressed: () => _onBack(context),
           ),
-          IconButton(
-            tooltip: 'Reading speed',
-            onPressed: () => _showSpeedSheet(context),
-            icon: const Icon(Icons.tune_rounded, color: StudentTheme.primaryOrange),
+        ),
+        body: Center(
+          child: Text(
+            'Failed to load story',
+            style: StudentTheme.body,
           ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            _ProgressBar(current: _pageIndex + 1, total: total),
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: total,
-                onPageChanged: (idx) {
-                  setState(() => _pageIndex = idx);
-                },
-                itemBuilder: (context, i) {
-                  final text = paragraphs[i];
-                  return _ReaderPageBody(
-                    text: text,
-                    onLongPressWord: (word) => _openDictionary(context, rawToken: word),
-                  );
-                },
-              ),
-            ),
-            _PagerBar(
-              canPrev: _pageIndex > 0,
-              canNext: _pageIndex < total - 1,
-              onPrev: () => _pageController.previousPage(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOut,
-              ),
-              onNext: () => _pageController.nextPage(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOut,
-              ),
-            ),
-          ],
         ),
       ),
+      data: (story) {
+        if (story == null) {
+          return Scaffold(
+            backgroundColor: StudentTheme.surfaceCream,
+            appBar: AppBar(
+              title: const Text('Reader'),
+              backgroundColor: StudentTheme.surfaceCream,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: StudentTheme.titleDark),
+                onPressed: () => _onBack(context),
+              ),
+            ),
+            body: const Center(child: Text('Story not found')),
+          );
+        }
+
+        final paragraphs = story.paragraphs;
+        final total = paragraphs.isEmpty ? 1 : paragraphs.length;
+        final currentText = paragraphs.isEmpty ? '' : paragraphs[_pageIndex.clamp(0, total - 1)];
+
+        return Scaffold(
+          backgroundColor: StudentTheme.surfaceCream,
+          appBar: AppBar(
+            backgroundColor: StudentTheme.surfaceCream,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, color: StudentTheme.titleDark),
+              onPressed: () => _onBack(context),
+            ),
+            title: Text(
+              story.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: StudentTheme.titleDark,
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
+            actions: [
+              IconButton(
+                tooltip: _isSpeaking ? 'Stop' : 'Read aloud',
+                onPressed: () => _toggleReadAloud(currentText),
+                icon: Icon(
+                  _isSpeaking ? Icons.stop_rounded : Icons.volume_up_rounded,
+                  color: StudentTheme.primaryOrange,
+                ),
+              ),
+              IconButton(
+                tooltip: 'Reading speed',
+                onPressed: () => _showSpeedSheet(context),
+                icon: const Icon(Icons.tune_rounded, color: StudentTheme.primaryOrange),
+              ),
+              const SizedBox(width: 4),
+            ],
+          ),
+          body: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                _ProgressBar(current: _pageIndex + 1, total: total),
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: total,
+                    onPageChanged: (idx) {
+                      setState(() {
+                        _pageIndex = idx;
+                        _showCompletionCta = idx == total - 1;
+                      });
+                    },
+                    itemBuilder: (context, i) {
+                      final text = paragraphs[i];
+                      return _ReaderPageBody(
+                        text: text,
+                        onLongPressWord: (word) => _openDictionary(context, rawToken: word),
+                      );
+                    },
+                  ),
+                ),
+                _PagerBar(
+                  canPrev: _pageIndex > 0,
+                  canNext: _pageIndex < total - 1,
+                  onPrev: () => _pageController.previousPage(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOut,
+                  ),
+                  onNext: () => _pageController.nextPage(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOut,
+                  ),
+                ),
+                if (_showCompletionCta)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 46,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: StudentTheme.primaryOrange,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () => GoRouter.of(context)
+                            .go('/student/evaluation/${widget.storyId}/activity'),
+                        child: const Text(
+                          'Story Activities',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

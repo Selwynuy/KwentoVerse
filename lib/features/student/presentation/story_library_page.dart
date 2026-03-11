@@ -1,49 +1,85 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../stories/data/story_providers.dart';
+import '../../stories/domain/story.dart';
 import 'student_theme.dart';
 
-class StoryLibraryPage extends StatefulWidget {
+class StoryLibraryPage extends ConsumerStatefulWidget {
   const StoryLibraryPage({super.key});
 
   @override
-  State<StoryLibraryPage> createState() => _StoryLibraryPageState();
+  ConsumerState<StoryLibraryPage> createState() => _StoryLibraryPageState();
 }
 
-class _StoryLibraryPageState extends State<StoryLibraryPage> {
+class _StoryLibraryPageState extends ConsumerState<StoryLibraryPage> {
   int _selectedSegment = 0; // 0 = Home, 1 = Notifications
-
-  static const _myLibrary = [
-    _BookItem('It\'s Not Hansel and Gretel'),
-    _BookItem('Tonya and Her Perfect Tea'),
-    _BookItem('The Three Little Pigs'),
-  ];
-
-  static const _forYou = [
-    _BookItem('Be Kind'),
-    _BookItem('My Quiet Imagination'),
-    _BookItem('A Day At Abbott Elementary'),
-  ];
-
-  static const _currentReadings = [
-    _ReadingItem('It\'s Not Hansel and Gretel', 'Josh Funk', '100% done'),
-  ];
-
-  static const _exercises = [
-    _ReadingItem('It\'s Not Hansel and Gretel', 'Josh Funk', '3/15 answered'),
-    _ReadingItem('Tonya and Her Perfect Tea', 'Alina Slyshik', '15/15 answered'),
-  ];
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _buildSegmentControl(),
-        Expanded(
-          child: _selectedSegment == 0 ? _buildHomeContent() : _buildNotificationsContent(),
+    // For now we load all stories; when StudentProfile exposes schoolId we can
+    // scope this with storiesForSchoolProvider(schoolId).
+    final storiesAsync = ref.watch(storiesForSchoolProvider(null));
+
+    return storiesAsync.when(
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: StudentTheme.primaryOrange),
+      ),
+      error: (error, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            'Could not load stories: $error',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: StudentTheme.titleDark),
+          ),
         ),
-      ],
+      ),
+      data: (stories) {
+        final myLibrary = stories;
+        final forYou = stories.reversed.toList(growable: false);
+
+        final currentReadings = myLibrary.isNotEmpty
+            ? [
+                _ReadingItem(
+                  storyId: myLibrary.first.id,
+                  title: myLibrary.first.title,
+                  author: myLibrary.first.author,
+                  progress: '0% done',
+                ),
+              ]
+            : const <_ReadingItem>[];
+
+        final exercises = myLibrary
+            .take(2)
+            .map(
+              (s) => _ReadingItem(
+                storyId: s.id,
+                title: s.title,
+                author: s.author,
+                progress: '0/15 answered',
+              ),
+            )
+            .toList(growable: false);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildSegmentControl(),
+            Expanded(
+              child: _selectedSegment == 0
+                  ? _buildHomeContent(
+                      myLibrary: myLibrary,
+                      forYou: forYou,
+                      currentReadings: currentReadings,
+                      exercises: exercises,
+                    )
+                  : _buildNotificationsContent(),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -72,7 +108,12 @@ class _StoryLibraryPageState extends State<StoryLibraryPage> {
     );
   }
 
-  Widget _buildHomeContent() {
+  Widget _buildHomeContent({
+    required List<Story> myLibrary,
+    required List<Story> forYou,
+    required List<_ReadingItem> currentReadings,
+    required List<_ReadingItem> exercises,
+  }) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -87,7 +128,7 @@ class _StoryLibraryPageState extends State<StoryLibraryPage> {
                   onActionTap: () {},
                 ),
                 const SizedBox(height: 10),
-                _HorizontalBooksStrip(books: _myLibrary),
+                _HorizontalBooksStrip(books: myLibrary),
                 const SizedBox(height: 18),
                 _SectionHeader(
                   title: 'For you',
@@ -95,7 +136,7 @@ class _StoryLibraryPageState extends State<StoryLibraryPage> {
                   onActionTap: () {},
                 ),
                 const SizedBox(height: 10),
-                _HorizontalBooksStrip(books: _forYou),
+                _HorizontalBooksStrip(books: forYou),
               ],
             ),
           ),
@@ -115,17 +156,17 @@ class _StoryLibraryPageState extends State<StoryLibraryPage> {
                   height: 92,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    itemCount: _currentReadings.length,
+                    itemCount: currentReadings.length,
                     separatorBuilder: (_, i) => const SizedBox(width: 12),
                     itemBuilder: (context, i) {
-                      final item = _currentReadings[i];
+                      final item = currentReadings[i];
                       return SizedBox(
                         width: 250,
                         child: _ReadingCard(
                           title: item.title,
                           author: item.author,
                           progress: item.progress,
-                          onTap: () => context.go('/student/story/sample-1'),
+                          onTap: () => context.go('/student/story/${item.storyId}'),
                         ),
                       );
                     },
@@ -138,14 +179,14 @@ class _StoryLibraryPageState extends State<StoryLibraryPage> {
                   onActionTap: () {},
                 ),
                 const SizedBox(height: 10),
-                ..._exercises.map(
+                ...exercises.map(
                   (item) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _ReadingCard(
                       title: item.title,
                       author: item.author,
                       progress: item.progress,
-                      onTap: () => context.go('/student/evaluation/sample-1/activity'),
+                      onTap: () => context.go('/student/evaluation/${item.storyId}/activity'),
                     ),
                   ),
                 ),
@@ -228,15 +269,17 @@ class _SegmentChip extends StatelessWidget {
 }
 
 class _ReadingItem {
-  const _ReadingItem(this.title, this.author, this.progress);
+  const _ReadingItem({
+    required this.storyId,
+    required this.title,
+    required this.author,
+    required this.progress,
+  });
+
+  final String storyId;
   final String title;
   final String author;
   final String progress;
-}
-
-class _BookItem {
-  const _BookItem(this.title);
-  final String title;
 }
 
 class _OuterSectionCard extends StatelessWidget {
@@ -313,7 +356,7 @@ class _SectionHeader extends StatelessWidget {
 class _HorizontalBooksStrip extends StatelessWidget {
   const _HorizontalBooksStrip({required this.books});
 
-  final List<_BookItem> books;
+  final List<Story> books;
 
   @override
   Widget build(BuildContext context) {
@@ -335,14 +378,13 @@ class _HorizontalBooksStrip extends StatelessWidget {
         separatorBuilder: (_, i) => const SizedBox(width: 12),
         itemBuilder: (context, i) {
           final book = books[i];
-          final id = book.title == "It's Not Hansel and Gretel" ? 'sample-1' : 'sample-1';
           return SizedBox(
             width: tileWidth,
             child: Material(
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
-                onTap: () => context.go('/student/story/$id'),
+                onTap: () => context.go('/student/story/${book.id}'),
                 child: Padding(
                   padding: const EdgeInsets.all(tilePadding),
                   child: Column(

@@ -20,6 +20,7 @@ class StoryDetailsPage extends ConsumerStatefulWidget {
 class _StoryDetailsPageState extends ConsumerState<StoryDetailsPage> {
   int _rating = 0;
   bool _isInLibrary = false;
+  bool _ratingSubmitted = false;
 
   void _onBack(BuildContext context) {
     final router = GoRouter.of(context);
@@ -32,125 +33,211 @@ class _StoryDetailsPageState extends ConsumerState<StoryDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final story = ref.watch(storyByIdProvider(widget.storyId));
-    if (story == null) {
-      return _NotFoundState(storyId: widget.storyId);
-    }
+    final storyAsync = ref.watch(storyByIdProvider(widget.storyId));
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: _HeroHeader(
-                    story: story,
-                    onBack: () => _onBack(context),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          story.title,
-                          style: StudentTheme.sectionTitle.copyWith(fontSize: 16),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          story.author,
-                          style: StudentTheme.caption.copyWith(fontSize: 12),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 10),
-                        _MetaRow(readsCount: story.readsCount, averageRating: story.averageRating),
-                        const SizedBox(height: 12),
-                        Row(
+    return storyAsync.when(
+      loading: () => const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, _) => const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(child: Text('Failed to load story')),
+      ),
+      data: (story) {
+        if (story == null) {
+          return _NotFoundState(storyId: widget.storyId);
+        }
+
+        final myRating = ref.watch(storyMyRatingProvider(widget.storyId)).when(
+              data: (v) => v,
+              loading: () => null,
+              error: (_, __) => null,
+            );
+        final displayedRating = myRating ?? _rating;
+        final hasRated = myRating != null || _ratingSubmitted;
+
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(storyByIdProvider(widget.storyId));
+                    ref.invalidate(storyMyRatingProvider(widget.storyId));
+                    await ref.read(storyByIdProvider(widget.storyId).future);
+                  },
+                  child: CustomScrollView(
+                    slivers: [
+                    SliverToBoxAdapter(
+                      child: _HeroHeader(
+                        story: story,
+                        onBack: () => _onBack(context),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Expanded(
-                              child: _PillButton(
-                                label: _isInLibrary ? 'Added' : 'Add',
-                                icon: _isInLibrary ? Icons.check_rounded : Icons.add_rounded,
-                                filled: false,
-                                onTap: () => setState(() => _isInLibrary = !_isInLibrary),
-                                height: 44,
-                              ),
+                            Text(
+                              story.title,
+                              style: StudentTheme.sectionTitle.copyWith(fontSize: 16),
+                              textAlign: TextAlign.center,
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _PillButton(
-                                label: 'Read',
-                                icon: Icons.menu_book_rounded,
-                                filled: true,
-                                onTap: () => context.go('/student/reader/${story.id}'),
-                                height: 44,
-                              ),
+                            const SizedBox(height: 4),
+                            Text(
+                              story.author,
+                              style: StudentTheme.caption.copyWith(fontSize: 12),
+                              textAlign: TextAlign.center,
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton.icon(
-                            onPressed: () =>
-                                context.go('/student/evaluation/${story.id}/activity'),
-                            icon: const Icon(Icons.assignment_turned_in_rounded, size: 18),
-                            label: const Text('Story Activities'),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Text('Description', style: StudentTheme.sectionHeader),
-                        const SizedBox(height: 8),
-                        Text(
-                          story.description,
-                          style: StudentTheme.body.copyWith(height: 1.35),
-                        ),
-                        const SizedBox(height: 8),
-                        if (story.genre != null || story.publicationDate != null)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (story.genre != null)
-                                Text(
-                                  'Genre: ${story.genre}',
-                                  style: StudentTheme.caption.copyWith(
-                                    fontSize: 12,
-                                    color: StudentTheme.secondaryGray,
+                            const SizedBox(height: 10),
+                            _MetaRow(
+                              readsCount: story.readsCount,
+                              averageRating: story.averageRating,
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _PillButton(
+                                    label: _isInLibrary ? 'Added' : 'Add',
+                                    icon: _isInLibrary ? Icons.check_rounded : Icons.add_rounded,
+                                    filled: false,
+                                    onTap: () =>
+                                        setState(() => _isInLibrary = !_isInLibrary),
+                                    height: 44,
                                   ),
                                 ),
-                              if (story.publicationDate != null)
-                                Text(
-                                  'Publication Date: ${story.publicationDate}',
-                                  style: StudentTheme.caption.copyWith(
-                                    fontSize: 12,
-                                    color: StudentTheme.secondaryGray,
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _PillButton(
+                                    label: 'Read',
+                                    icon: Icons.menu_book_rounded,
+                                    filled: true,
+                                    onTap: () => context.go('/student/reader/${story.id}'),
+                                    height: 44,
                                   ),
                                 ),
-                            ],
-                          ),
-                        const SizedBox(height: 12),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            Text('Description', style: StudentTheme.sectionHeader),
+                            const SizedBox(height: 8),
+                            Text(
+                              story.description,
+                              style: StudentTheme.body.copyWith(height: 1.35),
+                            ),
+                            const SizedBox(height: 8),
+                            if (story.genre != null || story.publicationDate != null)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (story.genre != null)
+                                    Text(
+                                      'Genre: ${story.genre}',
+                                      style: StudentTheme.caption.copyWith(
+                                        fontSize: 12,
+                                        color: StudentTheme.secondaryGray,
+                                      ),
+                                    ),
+                                  if (story.publicationDate != null)
+                                    Text(
+                                      'Publication Date: ${story.publicationDate}',
+                                      style: StudentTheme.caption.copyWith(
+                                        fontSize: 12,
+                                        color: StudentTheme.secondaryGray,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            const SizedBox(height: 12),
                         Text('Rate this book', style: StudentTheme.sectionHeaderSecondary),
                         const SizedBox(height: 8),
                         _StarRating(
-                          rating: _rating,
-                          onSetRating: (v) => setState(() => _rating = v),
+                          rating: displayedRating,
+                          onSetRating: (v) => setState(() {
+                            _rating = v;
+                            _ratingSubmitted = false;
+                          }),
+                        ),
+                        if (hasRated) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            'You rated this ${myRating ?? _rating}/5',
+                            style: StudentTheme.caption.copyWith(fontSize: 12),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          height: 44,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: _rating > 0
+                                  ? (hasRated
+                                      ? StudentTheme.primaryOrange.withValues(alpha: 0.6)
+                                      : StudentTheme.primaryOrange)
+                                  : StudentTheme.primaryOrange.withValues(alpha: 0.3),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                            onPressed: _rating > 0
+                                ? () async {
+                                    if (widget.storyId != 'sample-1') {
+                                      try {
+                                        await ref
+                                            .read(supabaseStoryRepositoryProvider)
+                                            .submitRating(widget.storyId, _rating);
+                                        ref.invalidate(storyMyRatingProvider(widget.storyId));
+                                      } catch (_) {
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                                content: Text('Could not save rating')),
+                                          );
+                                        }
+                                        return;
+                                      }
+                                    }
+                                    setState(() => _ratingSubmitted = true);
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Thanks for rating this book!'),
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                : null,
+                            child: Text(
+                              hasRated ? 'Rating submitted' : 'Submit rating',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 18),
-                      ],
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
+        );
+      },
     );
   }
 }
@@ -214,8 +301,8 @@ class _HeroHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const heroHeight = 250.0;
-    const coverHeight = 170.0;
+    const heroHeight = 180.0;
+    const coverHeight = 130.0;
 
     return SizedBox(
       height: heroHeight,

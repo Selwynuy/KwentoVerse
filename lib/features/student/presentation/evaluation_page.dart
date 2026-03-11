@@ -1,4 +1,7 @@
+import 'dart:math' show min;
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'student_theme.dart';
 
@@ -298,7 +301,14 @@ class _EvaluationPageScaffoldState extends State<_EvaluationPageScaffold> {
               children: [
                 _EvaluationHeader(
                   title: stageTitle(_stage),
-                  onBack: () => Navigator.of(context).maybePop(),
+                  onBack: () {
+                    final router = GoRouter.of(context);
+                    if (router.canPop()) {
+                      router.pop();
+                    } else {
+                      router.go('/student/story/${widget.storyId}');
+                    }
+                  },
                 ),
                 const SizedBox(height: 12),
                 Expanded(
@@ -390,7 +400,7 @@ class _EvaluationHeader extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onBack,
-            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            icon: const Icon(Icons.arrow_back_rounded),
           ),
           const SizedBox(width: 4),
           Text(
@@ -416,8 +426,8 @@ class _OptionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isSelected ? StudentTheme.primaryOrange : StudentTheme.primaryOrange;
-    const fg = Colors.white;
+    final bg = isSelected ? StudentTheme.primaryOrange : Colors.white;
+    final fg = isSelected ? Colors.white : StudentTheme.primaryOrange;
 
     return Material(
       color: bg,
@@ -427,9 +437,16 @@ class _OptionButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: StudentTheme.primaryOrange.withValues(alpha: isSelected ? 0.0 : 1.0),
+              width: 1.4,
+            ),
+          ),
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: fg,
@@ -459,6 +476,13 @@ class EvaluationResultPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final percent = total == 0 ? 0.0 : (correct / total) * 100;
     final scoreText = '${percent.toStringAsFixed(2)}%';
+    final size = min(
+          MediaQuery.sizeOf(context).width,
+          MediaQuery.sizeOf(context).height,
+        ) *
+        0.5;
+    final circleSize = size.clamp(280.0, 380.0);
+    const strokeWidth = 18.0;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -478,23 +502,28 @@ class EvaluationResultPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
-                    height: 180,
-                    width: 180,
+                    height: circleSize,
+                    width: circleSize,
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         CircularProgressIndicator(
                           value: 1,
-                          strokeWidth: 12,
+                          strokeWidth: strokeWidth,
                           valueColor: AlwaysStoppedAnimation<Color>(
                             Colors.grey.shade300,
                           ),
                         ),
-                        CircularProgressIndicator(
-                          value: percent / 100.0,
-                          strokeWidth: 12,
-                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
-                          backgroundColor: Colors.transparent,
+                        Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: CircularProgressIndicator(
+                            value: percent / 100.0,
+                            strokeWidth: strokeWidth,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Colors.green,
+                            ),
+                            backgroundColor: Colors.transparent,
+                          ),
                         ),
                         Column(
                           mainAxisSize: MainAxisSize.min,
@@ -502,7 +531,7 @@ class EvaluationResultPage extends StatelessWidget {
                             Text(
                               scoreText,
                               style: const TextStyle(
-                                fontSize: 24,
+                                fontSize: 32,
                                 fontWeight: FontWeight.w700,
                                 color: StudentTheme.titleDark,
                               ),
@@ -510,7 +539,7 @@ class EvaluationResultPage extends StatelessWidget {
                             const SizedBox(height: 4),
                             Text(
                               'You got $correct/$total right',
-                              style: StudentTheme.caption.copyWith(fontSize: 12),
+                              style: StudentTheme.caption.copyWith(fontSize: 13),
                             ),
                           ],
                         ),

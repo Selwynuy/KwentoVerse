@@ -93,13 +93,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/student/home', builder: (context, state) => const StudentHomePage()),
           GoRoute(path: '/student/library', builder: (context, state) => const StoryLibraryPage()),
           GoRoute(path: '/student/search', builder: (context, state) => const StudentSearchPage()),
-          GoRoute(
-            path: '/student/evaluation/:storyId/:type',
-            builder: (context, state) => EvaluationPage(
-              storyId: state.pathParameters['storyId']!,
-              type: state.pathParameters['type']!,
-            ),
-          ),
           GoRoute(path: '/student/progress', builder: (context, state) => const ProgressPage()),
           GoRoute(path: '/student/badges', builder: (context, state) => const BadgesPage()),
           GoRoute(path: '/student/profile', builder: (context, state) => const StudentProfilePage()),
@@ -114,6 +107,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/student/reader/:id',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => ReaderPage(storyId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/student/evaluation/:storyId/:type',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => EvaluationPage(
+          storyId: state.pathParameters['storyId']!,
+          type: state.pathParameters['type']!,
+        ),
       ),
 
       ShellRoute(
