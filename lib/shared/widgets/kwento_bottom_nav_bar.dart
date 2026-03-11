@@ -24,6 +24,11 @@ class KwentoBottomNavBar extends StatelessWidget {
 
   static const _activeColor = Color(0xFFFF9500); // orange
   static const _inactiveColor = Color(0xFF3C3C43); // dark gray
+  static const double _baseHeight = 52;
+  static const double _contentVerticalPadding = 4;
+  static const double _iconSize = 22;
+  static const double _labelFontSize = 10;
+  static const double _iconLabelGap = 2;
 
   @override
   Widget build(BuildContext context) {
@@ -41,19 +46,22 @@ class KwentoBottomNavBar extends StatelessWidget {
             ),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              for (var i = 0; i < items.length; i++)
-                _NavItem(
-                  icon: items[i].icon,
-                  label: items[i].label,
-                  isSelected: i == currentIndex,
-                  onTap: items[i].onTap,
-                ),
-            ],
+        child: SizedBox(
+          height: _baseHeight,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: _contentVerticalPadding),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                for (var i = 0; i < items.length; i++)
+                  _NavItem(
+                    icon: items[i].icon,
+                    label: items[i].label,
+                    isSelected: i == currentIndex,
+                    onTap: items[i].onTap,
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -87,12 +95,12 @@ class _NavItem extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 26, color: color),
-              const SizedBox(height: 4),
+              Icon(icon, size: KwentoBottomNavBar._iconSize, color: color),
+              const SizedBox(height: KwentoBottomNavBar._iconLabelGap),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: KwentoBottomNavBar._labelFontSize,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   color: color,
                 ),
