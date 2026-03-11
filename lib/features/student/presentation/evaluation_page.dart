@@ -1,4 +1,4 @@
-import 'dart:math' show min;
+import 'dart:math' show pi;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -458,6 +458,47 @@ class _OptionButton extends StatelessWidget {
   }
 }
 
+/// Draws a donut (ring) at the exact size of the [Canvas] — no layout constraints.
+class _ResultDonutPainter extends CustomPainter {
+  _ResultDonutPainter({required this.progress, required this.strokeWidth});
+
+  final double progress; // 0.0 .. 1.0
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.shortestSide / 2) - (strokeWidth / 2);
+    if (radius <= 0) return;
+
+    // Background ring (full circle)
+    final bgPaint = Paint()
+      ..color = Colors.grey.shade300
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(center, radius, bgPaint);
+
+    // Progress arc (green)
+    final progressPaint = Paint()
+      ..color = Colors.green
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -pi / 2, // start from top
+      2 * pi * progress.clamp(0.0, 1.0),
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ResultDonutPainter oldDelegate) =>
+      oldDelegate.progress != progress || oldDelegate.strokeWidth != strokeWidth;
+}
+
 class EvaluationResultPage extends StatelessWidget {
   const EvaluationResultPage({
     super.key,
@@ -476,13 +517,9 @@ class EvaluationResultPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final percent = total == 0 ? 0.0 : (correct / total) * 100;
     final scoreText = '${percent.toStringAsFixed(2)}%';
-    final size = min(
-          MediaQuery.sizeOf(context).width,
-          MediaQuery.sizeOf(context).height,
-        ) *
-        0.5;
-    final circleSize = size.clamp(280.0, 380.0);
-    const strokeWidth = 18.0;
+    // Make the result circle unambiguously large.
+    const double circleSize = 360.0; // fixed logical pixels
+    const double strokeWidth = 20.0;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -492,93 +529,85 @@ class EvaluationResultPage extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 560),
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Result',
-                    style: StudentTheme.sectionHeader.copyWith(fontSize: 18),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    height: circleSize,
-                    width: circleSize,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        CircularProgressIndicator(
-                          value: 1,
-                          strokeWidth: strokeWidth,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.grey.shade300,
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: CircularProgressIndicator(
-                            value: percent / 100.0,
-                            strokeWidth: strokeWidth,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              Colors.green,
+                  child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Result',
+                      style: StudentTheme.sectionHeader.copyWith(fontSize: 18),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      height: circleSize,
+                      width: circleSize,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CustomPaint(
+                            size: Size(circleSize, circleSize),
+                            painter: _ResultDonutPainter(
+                              progress: percent / 100.0,
+                              strokeWidth: strokeWidth,
                             ),
-                            backgroundColor: Colors.transparent,
+                          ),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                scoreText,
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w700,
+                                  color: StudentTheme.titleDark,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'You got $correct/$total right',
+                                style: StudentTheme.caption.copyWith(fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 46,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: StudentTheme.primaryOrange,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              scoreText,
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w700,
-                                color: StudentTheme.titleDark,
+                        onPressed: () {
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (_) => EvaluationPage(
+                                storyId: storyId,
+                                type: type,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'You got $correct/$total right',
-                              style: StudentTheme.caption.copyWith(fontSize: 13),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 46,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: StudentTheme.primaryOrange,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                          );
+                        },
+                        child: const Text('Retry'),
                       ),
-                      onPressed: () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (_) => EvaluationPage(
-                              storyId: storyId,
-                              type: type,
-                            ),
-                          ),
-                        );
-                      },
-                      child: const Text('Retry'),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).popUntil((route) => route.isFirst);
-                    },
-                    child: const Text('Back to Home'),
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).popUntil((route) => route.isFirst);
+                      },
+                      child: const Text('Back to Home'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
