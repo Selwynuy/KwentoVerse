@@ -10,6 +10,49 @@ class StudentTheme {
   static const Color surfaceCream = Color(0xFFF7F3EF);
   static const Color titleDark = Color(0xFF1C1C1E);
   static const Color secondaryGray = Color(0xFF6C6C70);
+
+  // Typography (keep consistent across Library / My School / Search).
+  static const TextStyle sectionTitle = TextStyle(
+    fontSize: 18,
+    height: 1.1,
+    fontWeight: FontWeight.w700,
+    color: titleDark,
+  );
+
+  static const TextStyle sectionHeader = TextStyle(
+    fontSize: 16,
+    height: 1.1,
+    fontWeight: FontWeight.w700,
+    color: titleDark,
+  );
+
+  static const TextStyle sectionHeaderSecondary = TextStyle(
+    fontSize: 16,
+    height: 1.1,
+    fontWeight: FontWeight.w600,
+    color: titleDark,
+  );
+
+  static const TextStyle actionLabel = TextStyle(
+    fontSize: 14,
+    height: 1.1,
+    fontWeight: FontWeight.w600,
+    color: titleDark,
+  );
+
+  static const TextStyle body = TextStyle(
+    fontSize: 13,
+    height: 1.2,
+    fontWeight: FontWeight.w500,
+    color: titleDark,
+  );
+
+  static const TextStyle caption = TextStyle(
+    fontSize: 11,
+    height: 1.2,
+    fontWeight: FontWeight.w600,
+    color: secondaryGray,
+  );
 }
 
 /// Placeholder for book cover (rect with icon). Use fixed size or aspect ratio.

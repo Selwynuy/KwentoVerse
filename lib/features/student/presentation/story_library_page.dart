@@ -108,11 +108,7 @@ class _StoryLibraryPageState extends State<StoryLibraryPage> {
               children: [
                 const Text(
                   'Current readings',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: StudentTheme.titleDark,
-                  ),
+                  style: StudentTheme.sectionHeader,
                 ),
                 const SizedBox(height: 10),
                 SizedBox(
@@ -167,11 +163,7 @@ class _StoryLibraryPageState extends State<StoryLibraryPage> {
       children: [
         const Text(
           'Today',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: StudentTheme.titleDark,
-          ),
+          style: StudentTheme.sectionHeaderSecondary,
         ),
         const SizedBox(height: 8),
         _NotificationTile(
@@ -184,11 +176,7 @@ class _StoryLibraryPageState extends State<StoryLibraryPage> {
         const SizedBox(height: 24),
         const Text(
           'Earlier',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: StudentTheme.titleDark,
-          ),
+          style: StudentTheme.sectionHeaderSecondary,
         ),
         const SizedBox(height: 8),
         _NotificationTile(
@@ -307,22 +295,14 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: StudentTheme.titleDark,
-          ),
+          style: StudentTheme.sectionHeader,
         ),
         if (actionLabel != null)
           GestureDetector(
             onTap: onActionTap,
             child: Text(
               actionLabel!,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: StudentTheme.titleDark,
-              ),
+              style: StudentTheme.actionLabel.copyWith(fontSize: 13),
             ),
           ),
       ],
@@ -343,38 +323,52 @@ class _HorizontalBooksStrip extends StatelessWidget {
     const titleGap = 6.0;
     const coverHeight = 96.0;
     const tileWidth = 96.0;
+    const tilePadding = 4.0;
+    const titleHeight = titleFontSize * titleLineHeight * titleLines;
 
     return SizedBox(
-      height: coverHeight + titleGap + (titleFontSize * titleLineHeight * titleLines),
+      // Tile content includes internal padding; account for it to avoid overflow.
+      height: coverHeight + titleGap + titleHeight + tilePadding * 2,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: books.length,
         separatorBuilder: (_, i) => const SizedBox(width: 12),
         itemBuilder: (context, i) {
           final book = books[i];
+          final id = book.title == "It's Not Hansel and Gretel" ? 'sample-1' : 'sample-1';
           return SizedBox(
             width: tileWidth,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const BookCoverPlaceholder(width: 92, height: coverHeight),
-                const SizedBox(height: titleGap),
-                SizedBox(
-                  height: titleFontSize * titleLineHeight * titleLines,
-                  child: Text(
-                    book.title,
-                    textAlign: TextAlign.center,
-                    maxLines: titleLines,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: titleFontSize,
-                      height: titleLineHeight,
-                      fontWeight: FontWeight.w600,
-                      color: StudentTheme.titleDark,
-                    ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => context.go('/student/story/$id'),
+                child: Padding(
+                  padding: const EdgeInsets.all(tilePadding),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const BookCoverPlaceholder(width: 92, height: coverHeight),
+                      const SizedBox(height: titleGap),
+                      SizedBox(
+                        height: titleHeight,
+                        child: Text(
+                          book.title,
+                          textAlign: TextAlign.center,
+                          maxLines: titleLines,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: titleFontSize,
+                            height: titleLineHeight,
+                            fontWeight: FontWeight.w600,
+                            color: StudentTheme.titleDark,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           );
         },

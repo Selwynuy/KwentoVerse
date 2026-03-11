@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'student_theme.dart';
 
-class StudentHomePage extends StatelessWidget {
+class StudentHomePage extends StatefulWidget {
   const StudentHomePage({super.key});
 
+  @override
+  State<StudentHomePage> createState() => _StudentHomePageState();
+}
+
+class _StudentHomePageState extends State<StudentHomePage> {
   static const _educators = [
     'Alina Slyshik',
     'Josh Funk',
@@ -17,8 +22,35 @@ class StudentHomePage extends StatelessWidget {
     'Tonya',
   ];
 
+  final _schoolSearchController = TextEditingController();
+  String _appliedSchoolBookQuery = '';
+
+  @override
+  void dispose() {
+    _schoolSearchController.dispose();
+    super.dispose();
+  }
+
+  List<String> get _filteredSchoolBooks {
+    final q = _appliedSchoolBookQuery.trim().toLowerCase();
+    if (q.isEmpty) return _schoolBooks;
+    return _schoolBooks.where((b) => b.toLowerCase().contains(q)).toList(growable: false);
+  }
+
+  void _applySchoolBookSearch() {
+    setState(() => _appliedSchoolBookQuery = _schoolSearchController.text);
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+
+  void _clearSchoolBookSearch() {
+    _schoolSearchController.clear();
+    setState(() => _appliedSchoolBookQuery = '');
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final filteredBooks = _filteredSchoolBooks;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -28,7 +60,7 @@ class StudentHomePage extends StatelessWidget {
         const SizedBox(height: 20),
         _buildSchoolLibrarySection(),
         const SizedBox(height: 16),
-        _buildBookGrid(),
+        _buildBookGrid(filteredBooks),
       ],
     );
   }
@@ -65,93 +97,115 @@ class StudentHomePage extends StatelessWidget {
   }
 
   Widget _buildEducatorSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Educator',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: StudentTheme.titleDark,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: StudentTheme.cardLightOrange,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: StudentTheme.primaryOrange.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Educator',
+                style: StudentTheme.sectionTitle,
               ),
-            ),
-            GestureDetector(
-              onTap: () {},
-              child: const Text(
-                'See More →',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: StudentTheme.titleDark,
+              InkWell(
+                onTap: () {},
+                borderRadius: BorderRadius.circular(10),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  child: Row(
+                    children: [
+                      Text(
+                        'See More',
+                        style: StudentTheme.actionLabel,
+                      ),
+                      SizedBox(width: 4),
+                      Icon(Icons.chevron_right_rounded, size: 18, color: StudentTheme.titleDark),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 96,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _educators.length,
-            separatorBuilder: (_, i) => const SizedBox(width: 16),
-            itemBuilder: (context, i) {
-              final name = _educators[i];
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircleAvatar(
-                    radius: 26,
-                    backgroundColor: StudentTheme.cardLightOrange,
-                    child: Icon(
-                      Icons.person_rounded,
-                      size: 28,
-                      color: StudentTheme.primaryOrange,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    width: 70,
-                    child: Text(
-                      name,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: StudentTheme.titleDark,
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 92,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _educators.length,
+              separatorBuilder: (_, i) => const SizedBox(width: 14),
+              itemBuilder: (context, i) {
+                final name = _educators[i];
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 10,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 26,
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          Icons.person_rounded,
+                          size: 28,
+                          color: StudentTheme.primaryOrange,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              );
-            },
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      width: 76,
+                      child: Text(
+                        name,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.15,
+                          fontWeight: FontWeight.w600,
+                          color: StudentTheme.titleDark,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildSchoolLibrarySection() {
+    final hasText = _schoolSearchController.text.trim().isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'School Library',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: StudentTheme.titleDark,
-          ),
+          style: StudentTheme.sectionTitle,
         ),
         const SizedBox(height: 10),
         TextField(
-          readOnly: true,
+          controller: _schoolSearchController,
+          textInputAction: TextInputAction.search,
+          onSubmitted: (_) => _applySchoolBookSearch(),
           decoration: InputDecoration(
             hintText: 'Search for books',
             hintStyle: const TextStyle(color: StudentTheme.secondaryGray),
@@ -159,6 +213,24 @@ class StudentHomePage extends StatelessWidget {
               Icons.search_rounded,
               color: StudentTheme.secondaryGray,
               size: 22,
+            ),
+            suffixIcon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hasText)
+                  IconButton(
+                    tooltip: 'Clear',
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    color: StudentTheme.secondaryGray,
+                    onPressed: _clearSchoolBookSearch,
+                  ),
+                IconButton(
+                  tooltip: 'Search',
+                  icon: const Icon(Icons.search_rounded, size: 22),
+                  color: StudentTheme.secondaryGray,
+                  onPressed: _applySchoolBookSearch,
+                ),
+              ],
             ),
             filled: true,
             fillColor: Colors.white,
@@ -177,7 +249,42 @@ class StudentHomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildBookGrid() {
+  Widget _buildBookGrid(List<String> books) {
+    if (books.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: StudentTheme.cardLightOrange,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: StudentTheme.primaryOrange.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          children: const [
+            SizedBox(height: 6),
+            Icon(Icons.search_off_rounded, color: StudentTheme.secondaryGray, size: 40),
+            SizedBox(height: 10),
+            Text(
+              'No books match your search',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: StudentTheme.titleDark,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Try a different keyword.',
+              style: TextStyle(
+                fontSize: 12,
+                color: StudentTheme.secondaryGray,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -194,9 +301,9 @@ class StudentHomePage extends StatelessWidget {
           crossAxisSpacing: 16,
           mainAxisSpacing: 12,
         ),
-        itemCount: _schoolBooks.length,
+        itemCount: books.length,
         itemBuilder: (context, i) {
-          final title = _schoolBooks[i];
+          final title = books[i];
           const titleLines = 2;
           const titleFontSize = 12.0;
           const titleLineHeight = 1.15;

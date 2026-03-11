@@ -30,8 +30,12 @@ import '../../features/student/presentation/avatar_selection_page.dart';
 import '../../features/student/presentation/enrollment_page.dart';
 import '../../features/student/presentation/student_search_page.dart';
 
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final _studentShellNavigatorKey = GlobalKey<NavigatorState>();
+
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
+    navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
     refreshListenable: _GoRouterRefresh(ref),
     redirect: (context, state) {
@@ -83,19 +87,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       ShellRoute(
+        navigatorKey: _studentShellNavigatorKey,
         builder: (context, state, child) => StudentShell(child: child),
         routes: [
           GoRoute(path: '/student/home', builder: (context, state) => const StudentHomePage()),
           GoRoute(path: '/student/library', builder: (context, state) => const StoryLibraryPage()),
           GoRoute(path: '/student/search', builder: (context, state) => const StudentSearchPage()),
-          GoRoute(
-            path: '/student/story/:id',
-            builder: (context, state) => StoryDetailsPage(storyId: state.pathParameters['id']!),
-          ),
-          GoRoute(
-            path: '/student/reader/:id',
-            builder: (context, state) => ReaderPage(storyId: state.pathParameters['id']!),
-          ),
           GoRoute(
             path: '/student/evaluation/:storyId/:type',
             builder: (context, state) => EvaluationPage(
@@ -107,6 +104,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/student/badges', builder: (context, state) => const BadgesPage()),
           GoRoute(path: '/student/profile', builder: (context, state) => const StudentProfilePage()),
         ],
+      ),
+      GoRoute(
+        path: '/student/story/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => StoryDetailsPage(storyId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/student/reader/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ReaderPage(storyId: state.pathParameters['id']!),
       ),
 
       ShellRoute(

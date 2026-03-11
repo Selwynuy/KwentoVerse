@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'student_theme.dart';
 
@@ -16,12 +17,14 @@ class StudentSearchPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const tilePadding = 4.0;
     const titleLines = 2;
-    const titleFontSize = 14.0;
-    const titleLineHeight = 1.1;
+    const titleFontSize = 12.0;
+    const titleLineHeight = 1.15;
     const titleGap = 8.0;
-    const coverWidth = 110.0;
     const coverHeight = 150.0;
+    const titleHeight = titleFontSize * titleLineHeight * titleLines;
+    const tileHeight = (tilePadding * 2) + coverHeight + titleGap + titleHeight;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -53,38 +56,53 @@ class StudentSearchPage extends StatelessWidget {
         ),
         Expanded(
           child: GridView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.6,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+              // Keeps tiles from getting huge on wider screens (web/tablet).
+              maxCrossAxisExtent: 190,
+              mainAxisExtent: tileHeight,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
             ),
             itemCount: _searchBooks.length,
             itemBuilder: (context, i) {
               final title = _searchBooks[i];
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const BookCoverPlaceholder(width: coverWidth, height: coverHeight),
-                  const SizedBox(height: titleGap),
-                  SizedBox(
-                    height: titleFontSize * titleLineHeight * titleLines,
-                    child: Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      maxLines: titleLines,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: titleFontSize,
-                        height: titleLineHeight,
-                        fontWeight: FontWeight.w600,
-                        color: StudentTheme.titleDark,
-                      ),
+              final id = title == "It's Not Hansel and Gretel" ? 'sample-1' : 'sample-1';
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => context.go('/student/story/$id'),
+                  child: Padding(
+                    padding: const EdgeInsets.all(tilePadding),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(
+                          height: coverHeight,
+                          child: BookCoverPlaceholder(useConstraints: true),
+                        ),
+                        const SizedBox(height: titleGap),
+                        SizedBox(
+                          height: titleHeight,
+                          child: Text(
+                            title,
+                            textAlign: TextAlign.center,
+                            maxLines: titleLines,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: titleFontSize,
+                              height: titleLineHeight,
+                              fontWeight: FontWeight.w600,
+                              color: StudentTheme.titleDark,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               );
             },
           ),

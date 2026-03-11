@@ -17,7 +17,14 @@ class KwentoBottomNavBar extends StatelessWidget {
     super.key,
     required this.items,
     required this.currentIndex,
-  }) : assert(items.length == 3, 'KwentoBottomNavBar currently supports exactly 3 items.');
+  })  : assert(
+          items.length >= 2 && items.length <= 5,
+          'KwentoBottomNavBar supports 2 to 5 items.',
+        ),
+        assert(
+          currentIndex >= 0 && currentIndex < items.length,
+          'currentIndex must be within items range.',
+        );
 
   final List<KwentoBottomNavBarItem> items;
   final int currentIndex;
@@ -97,12 +104,22 @@ class _NavItem extends StatelessWidget {
             children: [
               Icon(icon, size: KwentoBottomNavBar._iconSize, color: color),
               const SizedBox(height: KwentoBottomNavBar._iconLabelGap),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: KwentoBottomNavBar._labelFontSize,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: color,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: KwentoBottomNavBar._labelFontSize,
+                      height: 1.1,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: color,
+                    ),
+                  ),
                 ),
               ),
             ],
