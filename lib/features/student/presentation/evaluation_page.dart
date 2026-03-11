@@ -1,18 +1,21 @@
 import 'dart:math' show pi;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../data/quiz_result_providers.dart';
+import '../domain/quiz_result.dart';
 import 'student_theme.dart';
 
-class EvaluationPage extends StatelessWidget {
+class EvaluationPage extends ConsumerWidget {
   const EvaluationPage({super.key, required this.storyId, required this.type});
 
   final String storyId;
   final String type;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return _EvaluationPageScaffold(
       storyId: storyId,
       type: type,
@@ -231,7 +234,7 @@ List<_StagedQuestion> _buildCombinedQuestions(String storyId) {
   return out;
 }
 
-class _EvaluationPageScaffold extends StatefulWidget {
+class _EvaluationPageScaffold extends ConsumerStatefulWidget {
   const _EvaluationPageScaffold({
     required this.storyId,
     required this.type,
@@ -241,10 +244,10 @@ class _EvaluationPageScaffold extends StatefulWidget {
   final String type;
 
   @override
-  State<_EvaluationPageScaffold> createState() => _EvaluationPageScaffoldState();
+  ConsumerState<_EvaluationPageScaffold> createState() => _EvaluationPageScaffoldState();
 }
 
-class _EvaluationPageScaffoldState extends State<_EvaluationPageScaffold> {
+class _EvaluationPageScaffoldState extends ConsumerState<_EvaluationPageScaffold> {
   late final bool _isCombined = widget.type.toLowerCase() == 'combined';
   late final EvaluationStage _stage = parseEvaluationStage(widget.type);
   late final List<_StagedQuestion> _questions = _isCombined
@@ -265,7 +268,30 @@ class _EvaluationPageScaffoldState extends State<_EvaluationPageScaffold> {
     });
   }
 
-  void _onNextOrSubmit() {
+  /// Build per-stage (correct, total) for combined quiz; single stage for non-combined.
+  List<StageScore> _computeStageScores() {
+    final byStage = <EvaluationStage, List<_StagedQuestion>>{};
+    for (final sq in _questions) {
+      byStage.putIfAbsent(sq.stage, () => []).add(sq);
+    }
+    final orderedStages = _isCombined
+        ? [EvaluationStage.activity, EvaluationStage.abstraction, EvaluationStage.application, EvaluationStage.assessment]
+        : [_stage];
+    final List<StageScore> out = [];
+    for (final stage in orderedStages) {
+      final list = byStage[stage];
+      if (list == null || list.isEmpty) continue;
+      int correct = 0;
+      for (final sq in list) {
+        final selected = _answers[sq.question.id];
+        if (selected != null && selected == sq.question.correctIndex) correct++;
+      }
+      out.add(StageScore(stageName: stageTitle(stage), correct: correct, total: list.length));
+    }
+    return out;
+  }
+
+  Future<void> _onNextOrSubmit() async {
     final hasAnswer = _answers.containsKey(_currentEvalQuestion.id);
     if (!hasAnswer) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -285,13 +311,28 @@ class _EvaluationPageScaffoldState extends State<_EvaluationPageScaffold> {
       return;
     }
 
-    // Submit and navigate to result.
     final correctCount = _questions.where((sq) {
       final q = sq.question;
       final selected = _answers[q.id];
       return selected != null && selected == q.correctIndex;
     }).length;
 
+    final stageScores = _computeStageScores();
+    final result = QuizResult(
+      storyId: widget.storyId,
+      stageScores: stageScores,
+      totalCorrect: correctCount,
+      totalQuestions: _questions.length,
+    );
+
+    try {
+      await ref.read(quizResultRepositoryProvider).save(result);
+      ref.invalidate(myQuizScoresWithStoriesProvider);
+    } catch (_) {
+      // Still show result; progress page may not show this attempt until next fetch
+    }
+
+    if (!mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => EvaluationResultPage(

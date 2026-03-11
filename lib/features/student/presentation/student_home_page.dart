@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../stories/data/story_providers.dart';
+import '../../stories/domain/story.dart';
 import 'student_theme.dart';
 
-class StudentHomePage extends StatefulWidget {
+class StudentHomePage extends ConsumerStatefulWidget {
   const StudentHomePage({super.key});
 
   @override
-  State<StudentHomePage> createState() => _StudentHomePageState();
+  ConsumerState<StudentHomePage> createState() => _StudentHomePageState();
 }
 
-class _StudentHomePageState extends State<StudentHomePage> {
+class _StudentHomePageState extends ConsumerState<StudentHomePage> {
   static const _educators = [
     'Alina Slyshik',
     'Josh Funk',
     'Mandy Archer',
     'Zietlow Miller',
     'Hannah Peters',
-  ];
-
-  static const _schoolBooks = [
-    'It\'s Not Hansel and Gretel',
-    'Tonya',
   ];
 
   final _schoolSearchController = TextEditingController();
@@ -29,12 +29,6 @@ class _StudentHomePageState extends State<StudentHomePage> {
   void dispose() {
     _schoolSearchController.dispose();
     super.dispose();
-  }
-
-  List<String> get _filteredSchoolBooks {
-    final q = _appliedSchoolBookQuery.trim().toLowerCase();
-    if (q.isEmpty) return _schoolBooks;
-    return _schoolBooks.where((b) => b.toLowerCase().contains(q)).toList(growable: false);
   }
 
   void _applySchoolBookSearch() {
@@ -50,7 +44,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredBooks = _filteredSchoolBooks;
+    final storiesAsync = ref.watch(searchStoriesProvider(_appliedSchoolBookQuery));
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -60,7 +54,25 @@ class _StudentHomePageState extends State<StudentHomePage> {
         const SizedBox(height: 20),
         _buildSchoolLibrarySection(),
         const SizedBox(height: 16),
-        _buildBookGrid(filteredBooks),
+        storiesAsync.when(
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: CircularProgressIndicator(color: StudentTheme.primaryOrange),
+            ),
+          ),
+          error: (err, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Could not load school books.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: StudentTheme.secondaryGray, fontSize: 14),
+              ),
+            ),
+          ),
+          data: (stories) => _buildBookGrid(stories),
+        ),
       ],
     );
   }
@@ -249,8 +261,13 @@ class _StudentHomePageState extends State<StudentHomePage> {
     );
   }
 
-  Widget _buildBookGrid(List<String> books) {
-    if (books.isEmpty) {
+  Widget _buildBookGrid(List<Story> stories) {
+    const titleLines = 2;
+    const titleFontSize = 12.0;
+    const titleLineHeight = 1.15;
+    final emptyQuery = _appliedSchoolBookQuery.trim().isEmpty;
+
+    if (stories.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -259,22 +276,24 @@ class _StudentHomePageState extends State<StudentHomePage> {
           border: Border.all(color: StudentTheme.primaryOrange.withValues(alpha: 0.2)),
         ),
         child: Column(
-          children: const [
-            SizedBox(height: 6),
+          children: [
+            const SizedBox(height: 6),
             Icon(Icons.search_off_rounded, color: StudentTheme.secondaryGray, size: 40),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
-              'No books match your search',
-              style: TextStyle(
+              emptyQuery ? 'No books in your school yet.' : 'No books match your search',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: StudentTheme.titleDark,
               ),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
-              'Try a different keyword.',
-              style: TextStyle(
+              emptyQuery ? '' : 'Try a different keyword.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
                 fontSize: 12,
                 color: StudentTheme.secondaryGray,
                 fontWeight: FontWeight.w600,
@@ -301,43 +320,79 @@ class _StudentHomePageState extends State<StudentHomePage> {
           crossAxisSpacing: 16,
           mainAxisSpacing: 12,
         ),
-        itemCount: books.length,
+        itemCount: stories.length,
         itemBuilder: (context, i) {
-          final title = books[i];
-          const titleLines = 2;
-          const titleFontSize = 12.0;
-          const titleLineHeight = 1.15;
-          return Column(
-            mainAxisSize: MainAxisSize.max,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(
-                height: 150,
-                child: AspectRatio(
-                  aspectRatio: 110 / 150,
-                  child: BookCoverPlaceholder(useConstraints: true),
-                ),
-              ),
-              const SizedBox(height: 6),
-              SizedBox(
-                height: titleFontSize * titleLineHeight * titleLines,
-                child: Text(
-                  title.toUpperCase(),
-                  textAlign: TextAlign.center,
-                  maxLines: titleLines,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: titleFontSize,
-                    height: titleLineHeight,
-                    fontWeight: FontWeight.w600,
-                    color: StudentTheme.titleDark,
+          final story = stories[i];
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => context.go('/student/story/${story.id}'),
+              child: Column(
+                mainAxisSize: MainAxisSize.max,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: 150,
+                    child: AspectRatio(
+                      aspectRatio: 110 / 150,
+                      child: _BookCover(story: story),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    height: titleFontSize * titleLineHeight * titleLines,
+                    child: Text(
+                      story.title,
+                      textAlign: TextAlign.center,
+                      maxLines: titleLines,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: titleFontSize,
+                        height: titleLineHeight,
+                        fontWeight: FontWeight.w600,
+                        color: StudentTheme.titleDark,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           );
         },
       ),
     );
+  }
+}
+
+class _BookCover extends StatelessWidget {
+  const _BookCover({required this.story});
+  final Story story;
+
+  @override
+  Widget build(BuildContext context) {
+    final imageProvider = _coverImageProvider(story);
+    return Container(
+      decoration: BoxDecoration(
+        color: StudentTheme.cardLightOrange,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: imageProvider == null
+          ? const Center(
+              child: Icon(Icons.auto_stories_rounded, size: 48, color: StudentTheme.primaryOrange),
+            )
+          : Image(image: imageProvider, fit: BoxFit.cover),
+    );
+  }
+
+  ImageProvider? _coverImageProvider(Story story) {
+    if (story.coverStoragePath != null && story.coverStoragePath!.trim().isNotEmpty) {
+      return NetworkImage(story.coverStoragePath!);
+    }
+    if (story.coverAssetPath != null && story.coverAssetPath!.trim().isNotEmpty) {
+      return AssetImage(story.coverAssetPath!);
+    }
+    return null;
   }
 }

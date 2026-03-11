@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../stories/data/story_providers.dart';
 import '../../stories/domain/story.dart';
+import '../data/quiz_result_providers.dart';
 import '../data/student_profile_providers.dart';
 import '../data/student_profile_repository.dart';
+import '../domain/quiz_result.dart';
 import 'avatar_icons.dart';
 import 'student_theme.dart';
 
@@ -16,9 +18,11 @@ class ProgressPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(myStudentProfileProvider);
     final readStoriesAsync = ref.watch(myReadStoriesProvider);
+    final quizScoresAsync = ref.watch(myQuizScoresWithStoriesProvider);
     return _ProgressOverviewPage(
       profileAsync: profileAsync,
       readStoriesAsync: readStoriesAsync,
+      quizScoresAsync: quizScoresAsync,
     );
   }
 }
@@ -27,17 +31,32 @@ class _ProgressOverviewPage extends StatelessWidget {
   const _ProgressOverviewPage({
     required this.profileAsync,
     required this.readStoriesAsync,
+    required this.quizScoresAsync,
   });
 
   final AsyncValue<StudentProfile> profileAsync;
   final AsyncValue<List<Story>> readStoriesAsync;
+  final AsyncValue<List<QuizResultWithStory>> quizScoresAsync;
 
   @override
   Widget build(BuildContext context) {
-    final student = _demoStudentProgress;
     final displayName = profileAsync.maybeWhen(
       data: (p) => p.fullName,
       orElse: () => 'Student',
+    );
+
+    final readStories = readStoriesAsync.maybeWhen(
+      data: (v) => v,
+      orElse: () => const <Story>[],
+    );
+    final quizScores = quizScoresAsync.maybeWhen(
+      data: (v) => v,
+      orElse: () => const <QuizResultWithStory>[],
+    );
+    final student = _deriveStudentProgress(
+      displayName: displayName,
+      readStories: readStories,
+      quizScores: quizScores,
     );
 
     return Scaffold(
@@ -103,12 +122,41 @@ class _ProgressOverviewPage extends StatelessWidget {
                           children: [
                             const TextSpan(text: 'Level: '),
                             TextSpan(text: student.currentLevelName),
+                            const TextSpan(text: '  •  '),
+                            TextSpan(text: '${student.totalPoints} pts'),
                           ],
                         ),
                       ),
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
+                Center(
+                  child: SizedBox(
+                    width: 260,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: student.nextLevelProgress,
+                        backgroundColor: StudentTheme.primaryOrange.withValues(alpha: 0.18),
+                        valueColor: const AlwaysStoppedAnimation<Color>(StudentTheme.primaryOrange),
+                        minHeight: 10,
+                      ),
+                    ),
+                  ),
+                ),
+                if (student.nextLevelName != null) ...[
+                  const SizedBox(height: 6),
+                  Center(
+                    child: Text(
+                      'Next: ${student.nextLevelName}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: StudentTheme.titleDark.withValues(alpha: 0.7),
+                          ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 14),
                 _SectionCard(
                   title: 'Badges',
@@ -116,11 +164,20 @@ class _ProgressOverviewPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 _SectionCard(
+                  title: 'Quiz Scores',
+                  child: quizScoresAsync.when(
+                    data: (scores) => _QuizScoresContent(scores: scores),
+                    loading: () => const _ScoresLoading(),
+                    error: (error, stackTrace) => const _ScoresError(),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _SectionCard(
                   title: "Books I've read so far!",
                   child: readStoriesAsync.when(
                     data: (stories) => _BookRow(stories: stories),
                     loading: () => const _BooksLoading(),
-                    error: (_, __) => const _BooksError(),
+                    error: (error, stackTrace) => const _BooksError(),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -461,6 +518,224 @@ class _BookCard extends StatelessWidget {
   }
 }
 
+class _QuizScoresContent extends StatelessWidget {
+  const _QuizScoresContent({required this.scores});
+
+  final List<QuizResultWithStory> scores;
+
+  @override
+  Widget build(BuildContext context) {
+    if (scores.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Text(
+          'Finish a story and complete its quiz to see your scores here.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: StudentTheme.titleDark.withValues(alpha: 0.7),
+              ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < scores.length; i++) ...[
+          _StoryScoreCard(score: scores[i]),
+          if (i < scores.length - 1) const SizedBox(height: 12),
+        ],
+      ],
+    );
+  }
+}
+
+class _StoryScoreCard extends StatelessWidget {
+  const _StoryScoreCard({required this.score});
+
+  final QuizResultWithStory score;
+
+  @override
+  Widget build(BuildContext context) {
+    const inner = Color(0xFFFFB862);
+    return InkWell(
+      onTap: () => context.push('/student/story/${score.storyId}'),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: StudentTheme.cardLightOrange,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 56, width: 44, child: BookCoverPlaceholder(useConstraints: true)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        score.storyTitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          color: StudentTheme.titleDark,
+                        ),
+                      ),
+                      if (score.storyAuthor.isNotEmpty)
+                        Text(
+                          score.storyAuthor,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
+                            color: StudentTheme.titleDark.withValues(alpha: 0.75),
+                          ),
+                        ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Text(
+                            'Completed',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11,
+                              color: Colors.green.shade700,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(999),
+                              child: LinearProgressIndicator(
+                                value: 1,
+                                backgroundColor: StudentTheme.primaryOrange.withValues(alpha: 0.22),
+                                valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                                minHeight: 6,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '100%',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11,
+                              color: Colors.green.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Scores',
+              style: StudentTheme.sectionHeader.copyWith(fontSize: 13),
+            ),
+            const SizedBox(height: 6),
+            ...score.stageScores.map(
+              (row) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: inner.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        row.stageName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                          color: StudentTheme.titleDark,
+                        ),
+                      ),
+                      Text(
+                        '${row.correct}/${row.total}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                          color: StudentTheme.titleDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Total score:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13,
+                      color: StudentTheme.titleDark,
+                    ),
+                  ),
+                  Text(
+                    '${score.totalCorrect}/${score.totalQuestions}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13,
+                      color: StudentTheme.titleDark,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ScoresLoading extends StatelessWidget {
+  const _ScoresLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 12),
+      child: Center(child: SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2))),
+    );
+  }
+}
+
+class _ScoresError extends StatelessWidget {
+  const _ScoresError();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Text(
+        'Could not load scores.',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.red.shade700,
+            ),
+      ),
+    );
+  }
+}
+
 class _BooksLoading extends StatelessWidget {
   const _BooksLoading();
 
@@ -529,7 +804,13 @@ class _LevelRow extends StatelessWidget {
     }
 
     final statusPills = <Widget>[
-      if (isCurrent || level.completed)
+      if (isCurrent)
+        pill(
+          label: 'Current',
+          fg: StudentTheme.primaryOrange,
+          bg: StudentTheme.primaryOrange.withValues(alpha: 0.12),
+        ),
+      if (!isCurrent && level.completed)
         pill(
           label: 'Completed',
           fg: Colors.green.shade700,
@@ -656,13 +937,19 @@ class _AvatarCircle extends StatelessWidget {
 class _StudentProgress {
   const _StudentProgress({
     required this.displayName,
+    required this.totalPoints,
     required this.currentLevelName,
+    required this.nextLevelName,
+    required this.nextLevelProgress,
     required this.latestBadge,
     required this.levels,
   });
 
   final String displayName;
+  final int totalPoints;
   final String currentLevelName;
+  final String? nextLevelName;
+  final double nextLevelProgress;
   final _BadgeProgress latestBadge;
   final List<_LevelProgress> levels;
 }
@@ -693,50 +980,96 @@ class _LevelProgress {
   final bool completed;
 }
 
-const _demoStudentProgress = _StudentProgress(
-  displayName: 'Ayeeshah',
-  currentLevelName: 'Egg',
-  latestBadge: _BadgeProgress(
-    name: 'Egg',
-    caption: 'You reached level 1!',
-    icon: Icons.egg_alt_rounded,
-  ),
-  levels: [
-    _LevelProgress(
-      name: 'Egg',
-      icon: Icons.egg_alt_rounded,
-      unlocked: true,
-      progress: 1,
-      subtitle: 'Completed',
-      completed: true,
-    ),
-    _LevelProgress(
-      name: '???',
-      icon: Icons.egg_rounded,
-      unlocked: false,
-      progress: 0.05,
-      subtitle: 'Earn 20 more points to unlock',
-    ),
-    _LevelProgress(
-      name: '???',
-      icon: Icons.bug_report_rounded,
-      unlocked: false,
-      progress: 0.02,
-      subtitle: 'Earn 60 more points to unlock',
-    ),
-    _LevelProgress(
-      name: '???',
-      icon: Icons.pets_rounded,
-      unlocked: false,
-      progress: 0.01,
-      subtitle: 'Earn 100 more points to unlock',
-    ),
-    _LevelProgress(
-      name: '???',
-      icon: Icons.flutter_dash_rounded,
-      unlocked: false,
-      progress: 0.0,
-      subtitle: 'Earn 140 more points to unlock',
-    ),
-  ],
-);
+_StudentProgress _deriveStudentProgress({
+  required String displayName,
+  required List<Story> readStories,
+  required List<QuizResultWithStory> quizScores,
+}) {
+  // PRD H1: points = story completion bonus + correct answers (question points).
+  // Numeric constants are still an open decision in the PRD; keep them centralized here.
+  const storyCompletionBonusPoints = 20;
+  const pointsPerCorrectAnswer = 1;
+
+  final storyPoints = readStories.length * storyCompletionBonusPoints;
+  final quizPoints = quizScores.fold<int>(0, (sum, r) => sum + (r.totalCorrect * pointsPerCorrectAnswer));
+  final totalPoints = storyPoints + quizPoints;
+
+  final ladder = <({int threshold, String name, IconData icon})>[
+    (threshold: 0, name: 'Egg', icon: Icons.egg_alt_rounded),
+    (threshold: 20, name: 'Hatchling', icon: Icons.egg_rounded),
+    (threshold: 60, name: 'Caterpillar', icon: Icons.bug_report_rounded),
+    (threshold: 100, name: 'Explorer', icon: Icons.pets_rounded),
+    (threshold: 140, name: 'Kwento Dash', icon: Icons.flutter_dash_rounded),
+  ];
+
+  int currentIndex = 0;
+  for (var i = 0; i < ladder.length; i++) {
+    if (totalPoints >= ladder[i].threshold) currentIndex = i;
+  }
+
+  final current = ladder[currentIndex];
+  final next = (currentIndex < ladder.length - 1) ? ladder[currentIndex + 1] : null;
+
+  final nextLevelProgress = () {
+    if (next == null) return 1.0;
+    final span = (next.threshold - current.threshold).clamp(1, 1 << 30);
+    final into = (totalPoints - current.threshold).clamp(0, span);
+    return into / span;
+  }();
+
+  final badge = _BadgeProgress(
+    name: current.name,
+    caption: 'You reached level ${currentIndex + 1}!',
+    icon: current.icon,
+  );
+
+  final levels = <_LevelProgress>[];
+  for (var i = 0; i < ladder.length; i++) {
+    final lvl = ladder[i];
+    final unlocked = totalPoints >= lvl.threshold;
+    final isCurrent = i == currentIndex;
+    final nextThreshold = (i < ladder.length - 1) ? ladder[i + 1].threshold : null;
+    final completed = unlocked && !isCurrent;
+
+    final progress = () {
+      if (!unlocked) return 0.0;
+      if (nextThreshold == null) return 1.0;
+      if (!isCurrent) return 1.0;
+      final span = (nextThreshold - lvl.threshold).clamp(1, 1 << 30);
+      final into = (totalPoints - lvl.threshold).clamp(0, span);
+      return into / span;
+    }();
+
+    final subtitle = () {
+      if (!unlocked) {
+        final remaining = (lvl.threshold - totalPoints).clamp(0, 1 << 30);
+        return 'Earn $remaining more points to unlock';
+      }
+      if (nextThreshold == null) return 'Max level reached';
+      if (!isCurrent) return 'Completed';
+      final remaining = (nextThreshold - totalPoints).clamp(0, 1 << 30);
+      return remaining == 0 ? 'Completed' : 'Earn $remaining more points to unlock next';
+    }();
+
+    levels.add(
+      _LevelProgress(
+        name: unlocked ? lvl.name : '???',
+        icon: lvl.icon,
+        unlocked: unlocked,
+        progress: progress,
+        subtitle: subtitle,
+        completed: completed || (isCurrent && nextThreshold != null && totalPoints >= nextThreshold),
+      ),
+    );
+  }
+
+  return _StudentProgress(
+    displayName: displayName,
+    totalPoints: totalPoints,
+    currentLevelName: current.name,
+    nextLevelName: next?.name,
+    nextLevelProgress: nextLevelProgress,
+    latestBadge: badge,
+    levels: levels,
+  );
+}
