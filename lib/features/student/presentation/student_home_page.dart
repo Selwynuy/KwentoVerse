@@ -197,24 +197,34 @@ class StudentHomePage extends StatelessWidget {
         itemCount: _schoolBooks.length,
         itemBuilder: (context, i) {
           final title = _schoolBooks[i];
+          const titleLines = 2;
+          const titleFontSize = 12.0;
+          const titleLineHeight = 1.15;
           return Column(
             mainAxisSize: MainAxisSize.max,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: const BookCoverPlaceholder(useConstraints: true),
+              const SizedBox(
+                height: 150,
+                child: AspectRatio(
+                  aspectRatio: 110 / 150,
+                  child: BookCoverPlaceholder(useConstraints: true),
+                ),
               ),
               const SizedBox(height: 6),
-              Text(
-                title.toUpperCase(),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 12,
-                  height: 1.15,
-                  fontWeight: FontWeight.w600,
-                  color: StudentTheme.titleDark,
+              SizedBox(
+                height: titleFontSize * titleLineHeight * titleLines,
+                child: Text(
+                  title.toUpperCase(),
+                  textAlign: TextAlign.center,
+                  maxLines: titleLines,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: titleFontSize,
+                    height: titleLineHeight,
+                    fontWeight: FontWeight.w600,
+                    color: StudentTheme.titleDark,
+                  ),
                 ),
               ),
             ],

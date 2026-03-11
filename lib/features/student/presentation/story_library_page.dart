@@ -13,6 +13,18 @@ class StoryLibraryPage extends StatefulWidget {
 class _StoryLibraryPageState extends State<StoryLibraryPage> {
   int _selectedSegment = 0; // 0 = Home, 1 = Notifications
 
+  static const _myLibrary = [
+    _BookItem('It\'s Not Hansel and Gretel'),
+    _BookItem('Tonya and Her Perfect Tea'),
+    _BookItem('The Three Little Pigs'),
+  ];
+
+  static const _forYou = [
+    _BookItem('Be Kind'),
+    _BookItem('My Quiet Imagination'),
+    _BookItem('A Day At Abbott Elementary'),
+  ];
+
   static const _currentReadings = [
     _ReadingItem('It\'s Not Hansel and Gretel', 'Josh Funk', '100% done'),
   ];
@@ -64,69 +76,84 @@ class _StoryLibraryPageState extends State<StoryLibraryPage> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text(
-          'Current readings',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: StudentTheme.titleDark,
+        _OuterSectionCard(
+          child: _InnerSectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SectionHeader(
+                  title: 'My library',
+                  actionLabel: 'See More →',
+                  onActionTap: () {},
+                ),
+                const SizedBox(height: 10),
+                _HorizontalBooksStrip(books: _myLibrary),
+                const SizedBox(height: 18),
+                _SectionHeader(
+                  title: 'For you',
+                  actionLabel: 'See More →',
+                  onActionTap: () {},
+                ),
+                const SizedBox(height: 10),
+                _HorizontalBooksStrip(books: _forYou),
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 120,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _currentReadings.length,
-            separatorBuilder: (_, i) => const SizedBox(width: 12),
-            itemBuilder: (context, i) {
-              final item = _currentReadings[i];
-              return SizedBox(
-                width: 280,
-                child: _ReadingCard(
-                  title: item.title,
-                  author: item.author,
-                  progress: item.progress,
-                  onTap: () => context.go('/student/story/sample-1'),
+        const SizedBox(height: 14),
+        _OuterSectionCard(
+          child: _InnerSectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Current readings',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: StudentTheme.titleDark,
+                  ),
                 ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Exercises',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: StudentTheme.titleDark,
-              ),
-            ),
-            GestureDetector(
-              onTap: () {},
-              child: const Text(
-                'See More →',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: StudentTheme.titleDark,
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 92,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _currentReadings.length,
+                    separatorBuilder: (_, i) => const SizedBox(width: 12),
+                    itemBuilder: (context, i) {
+                      final item = _currentReadings[i];
+                      return SizedBox(
+                        width: 250,
+                        child: _ReadingCard(
+                          title: item.title,
+                          author: item.author,
+                          progress: item.progress,
+                          onTap: () => context.go('/student/story/sample-1'),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        ..._exercises.map(
-          (item) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _ReadingCard(
-              title: item.title,
-              author: item.author,
-              progress: item.progress,
-              onTap: () {},
+                const SizedBox(height: 16),
+                _SectionHeader(
+                  title: 'Exercises',
+                  actionLabel: 'See More →',
+                  onActionTap: () {},
+                ),
+                const SizedBox(height: 10),
+                ..._exercises.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _ReadingCard(
+                      title: item.title,
+                      author: item.author,
+                      progress: item.progress,
+                      onTap: () {},
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -196,13 +223,13 @@ class _SegmentChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           alignment: Alignment.center,
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
               color: isSelected ? Colors.white : StudentTheme.titleDark,
             ),
           ),
@@ -217,6 +244,143 @@ class _ReadingItem {
   final String title;
   final String author;
   final String progress;
+}
+
+class _BookItem {
+  const _BookItem(this.title);
+  final String title;
+}
+
+class _OuterSectionCard extends StatelessWidget {
+  const _OuterSectionCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: StudentTheme.cardCream,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: StudentTheme.primaryOrange.withValues(alpha: 0.16)),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _InnerSectionCard extends StatelessWidget {
+  const _InnerSectionCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: StudentTheme.cardLightOrange,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: StudentTheme.primaryOrange.withValues(alpha: 0.10)),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.title,
+    this.actionLabel,
+    this.onActionTap,
+  });
+
+  final String title;
+  final String? actionLabel;
+  final VoidCallback? onActionTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: StudentTheme.titleDark,
+          ),
+        ),
+        if (actionLabel != null)
+          GestureDetector(
+            onTap: onActionTap,
+            child: Text(
+              actionLabel!,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: StudentTheme.titleDark,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _HorizontalBooksStrip extends StatelessWidget {
+  const _HorizontalBooksStrip({required this.books});
+
+  final List<_BookItem> books;
+
+  @override
+  Widget build(BuildContext context) {
+    const titleLines = 2;
+    const titleFontSize = 10.5;
+    const titleLineHeight = 1.05;
+    const titleGap = 6.0;
+    const coverHeight = 96.0;
+    const tileWidth = 96.0;
+
+    return SizedBox(
+      height: coverHeight + titleGap + (titleFontSize * titleLineHeight * titleLines),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: books.length,
+        separatorBuilder: (_, i) => const SizedBox(width: 12),
+        itemBuilder: (context, i) {
+          final book = books[i];
+          return SizedBox(
+            width: tileWidth,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const BookCoverPlaceholder(width: 92, height: coverHeight),
+                const SizedBox(height: titleGap),
+                SizedBox(
+                  height: titleFontSize * titleLineHeight * titleLines,
+                  child: Text(
+                    book.title,
+                    textAlign: TextAlign.center,
+                    maxLines: titleLines,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: titleFontSize,
+                      height: titleLineHeight,
+                      fontWeight: FontWeight.w600,
+                      color: StudentTheme.titleDark,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
 }
 
 class _ReadingCard extends StatelessWidget {
@@ -241,12 +405,12 @@ class _ReadingCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const BookCoverPlaceholder(width: 56, height: 80),
-              const SizedBox(width: 12),
+              const BookCoverPlaceholder(width: 46, height: 66),
+              const SizedBox(width: 10),
               Flexible(
                 fit: FlexFit.loose,
                 child: Column(
@@ -256,29 +420,29 @@ class _ReadingCard extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: StudentTheme.titleDark,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       author,
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 12,
                         color: StudentTheme.secondaryGray,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Text(
                 progress,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   color: StudentTheme.secondaryGray,
                 ),
               ),
@@ -308,7 +472,7 @@ class _NotificationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
@@ -319,8 +483,8 @@ class _NotificationTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: iconColor, size: 32),
-          const SizedBox(width: 12),
+          Icon(icon, color: iconColor, size: 28),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -328,16 +492,16 @@ class _NotificationTile extends StatelessWidget {
                 Text(
                   message,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: StudentTheme.titleDark,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   time,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     color: StudentTheme.secondaryGray,
                   ),
                 ),

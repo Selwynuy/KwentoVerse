@@ -16,6 +16,13 @@ class StudentSearchPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const titleLines = 2;
+    const titleFontSize = 14.0;
+    const titleLineHeight = 1.1;
+    const titleGap = 8.0;
+    const coverWidth = 110.0;
+    const coverHeight = 150.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -60,17 +67,21 @@ class StudentSearchPage extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const BookCoverPlaceholder(width: 110, height: 150),
-                  const SizedBox(height: 8),
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: StudentTheme.titleDark,
+                  const BookCoverPlaceholder(width: coverWidth, height: coverHeight),
+                  const SizedBox(height: titleGap),
+                  SizedBox(
+                    height: titleFontSize * titleLineHeight * titleLines,
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      maxLines: titleLines,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: titleFontSize,
+                        height: titleLineHeight,
+                        fontWeight: FontWeight.w600,
+                        color: StudentTheme.titleDark,
+                      ),
                     ),
                   ),
                 ],
