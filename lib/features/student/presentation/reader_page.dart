@@ -4,6 +4,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../dictionary/data/dictionary_providers.dart';
+import '../../dictionary/data/local_dictionary_repository.dart';
 import '../../dictionary/domain/dictionary_term.dart';
 import '../../stories/data/story_providers.dart';
 import 'student_theme.dart';
@@ -24,6 +25,16 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   int _pageIndex = 0;
   bool _isSpeaking = false;
   double _rate = 0.48;
+
+  void _onBack(BuildContext context) {
+    final router = GoRouter.of(context);
+    if (router.canPop()) {
+      context.pop();
+    } else {
+      // If the reader is opened directly (no stack), go back to story details.
+      context.go('/student/story/${widget.storyId}');
+    }
+  }
 
   @override
   void initState() {
@@ -95,8 +106,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
         backgroundColor: StudentTheme.surfaceCream,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: StudentTheme.titleDark),
-          onPressed: () => context.pop(),
+          icon: const Icon(Icons.arrow_back_rounded, color: StudentTheme.titleDark),
+          onPressed: () => _onBack(context),
         ),
         title: Text(
           story.title,
@@ -279,23 +290,8 @@ class _ReaderPageBody extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 560),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 8, 18, 10),
-          child: Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: StudentTheme.cardLightOrange),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 16,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: _WordWrapText(text: text, onLongPressWord: onLongPressWord),
-          ),
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 10),
+          child: _WordWrapText(text: text, onLongPressWord: onLongPressWord),
         ),
       ),
     );
@@ -307,6 +303,8 @@ class _WordWrapText extends StatelessWidget {
 
   final String text;
   final ValueChanged<String> onLongPressWord;
+
+  static const _dictionary = LocalDictionaryRepository();
 
   @override
   Widget build(BuildContext context) {
@@ -324,16 +322,23 @@ class _WordWrapText extends StatelessWidget {
           if (t.isSpace)
             Text(t.raw, style: baseStyle)
           else
-            GestureDetector(
-              onLongPress: () => onLongPressWord(t.raw),
-              behavior: HitTestBehavior.translucent,
-              child: Text(
-                t.raw,
-                style: baseStyle.copyWith(
-                  decoration: TextDecoration.underline,
-                  decorationColor: StudentTheme.primaryOrange.withValues(alpha: 0.35),
-                ),
-              ),
+            Builder(
+              builder: (context) {
+                final isDictWord = _dictionary.lookup(t.raw) != null;
+                final style = isDictWord
+                    ? baseStyle.copyWith(
+                        color: StudentTheme.primaryOrange,
+                        fontWeight: FontWeight.w700,
+                      )
+                    : baseStyle;
+
+                return GestureDetector(
+                  onLongPress: () => onLongPressWord(t.raw),
+                  onTap: isDictWord ? () => onLongPressWord(t.raw) : null,
+                  behavior: HitTestBehavior.translucent,
+                  child: Text(t.raw, style: style),
+                );
+              },
             ),
       ],
     );

@@ -6,6 +6,8 @@ class Story {
     required this.description,
     required this.difficultyLabel,
     required this.paragraphs,
+    this.genre,
+    this.publicationDate,
     this.coverAssetPath,
     this.coverStoragePath,
     this.localCoverPath,
@@ -20,6 +22,12 @@ class Story {
   final String description;
   final String difficultyLabel;
   final List<String> paragraphs;
+
+  /// Optional genre label shown in the details page.
+  final String? genre;
+
+  /// Optional publication date label (pre-formatted string).
+  final String? publicationDate;
 
   /// Placeholder asset to use when no network/local cover is available.
   /// Example: `assets/kwentoverse_logo.png`.

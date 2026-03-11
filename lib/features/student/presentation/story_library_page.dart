@@ -145,7 +145,7 @@ class _StoryLibraryPageState extends State<StoryLibraryPage> {
                       title: item.title,
                       author: item.author,
                       progress: item.progress,
-                      onTap: () {},
+                      onTap: () => context.go('/student/evaluation/sample-1/activity'),
                     ),
                   ),
                 ),

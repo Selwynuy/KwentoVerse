@@ -8,6 +8,9 @@ class AppTheme {
       useMaterial3: true,
       scaffoldBackgroundColor: const Color(0xFFF7FAFC),
       appBarTheme: const AppBarTheme(centerTitle: false),
+      actionIconTheme: ActionIconThemeData(
+        backButtonIconBuilder: (context) => const Icon(Icons.arrow_back_rounded),
+      ),
     );
   }
 }

@@ -14,7 +14,9 @@ const _sampleStory = Story(
   author: 'Josh Funk',
   description:
       '“It’s Not Hansel and Gretel” flips the classic fairy tale on its head as Hansel and Gretel, fed up with their predictable roles, rebel against the narrator’s control. With witty banter, wild detours, and a forest full of quirky characters, the siblings prove that they’re not just pieces in a story—they’re ready to rewrite it entirely.',
-  difficultyLabel: 'Slice of Life',
+  difficultyLabel: 'Level 3',
+  genre: 'Slice of Life',
+  publicationDate: '12/11/02',
   estimatedMinutes: 6,
   readsCount: 1284,
   averageRating: 4.6,

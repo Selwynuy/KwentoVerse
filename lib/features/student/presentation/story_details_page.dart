@@ -21,6 +21,15 @@ class _StoryDetailsPageState extends ConsumerState<StoryDetailsPage> {
   int _rating = 0;
   bool _isInLibrary = false;
 
+  void _onBack(BuildContext context) {
+    final router = GoRouter.of(context);
+    if (router.canPop()) {
+      context.pop();
+    } else {
+      context.go('/student/library');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final story = ref.watch(storyByIdProvider(widget.storyId));
@@ -39,7 +48,7 @@ class _StoryDetailsPageState extends ConsumerState<StoryDetailsPage> {
                 SliverToBoxAdapter(
                   child: _HeroHeader(
                     story: story,
-                    onBack: () => context.pop(),
+                    onBack: () => _onBack(context),
                   ),
                 ),
                 SliverToBoxAdapter(
@@ -85,6 +94,16 @@ class _StoryDetailsPageState extends ConsumerState<StoryDetailsPage> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 10),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () =>
+                                context.go('/student/evaluation/${story.id}/activity'),
+                            icon: const Icon(Icons.assignment_turned_in_rounded, size: 18),
+                            label: const Text('Story Activities'),
+                          ),
+                        ),
                         const SizedBox(height: 14),
                         Text('Description', style: StudentTheme.sectionHeader),
                         const SizedBox(height: 8),
@@ -92,6 +111,29 @@ class _StoryDetailsPageState extends ConsumerState<StoryDetailsPage> {
                           story.description,
                           style: StudentTheme.body.copyWith(height: 1.35),
                         ),
+                        const SizedBox(height: 8),
+                        if (story.genre != null || story.publicationDate != null)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (story.genre != null)
+                                Text(
+                                  'Genre: ${story.genre}',
+                                  style: StudentTheme.caption.copyWith(
+                                    fontSize: 12,
+                                    color: StudentTheme.secondaryGray,
+                                  ),
+                                ),
+                              if (story.publicationDate != null)
+                                Text(
+                                  'Publication Date: ${story.publicationDate}',
+                                  style: StudentTheme.caption.copyWith(
+                                    fontSize: 12,
+                                    color: StudentTheme.secondaryGray,
+                                  ),
+                                ),
+                            ],
+                          ),
                         const SizedBox(height: 12),
                         Text('Rate this book', style: StudentTheme.sectionHeaderSecondary),
                         const SizedBox(height: 8),
@@ -116,6 +158,15 @@ class _StoryDetailsPageState extends ConsumerState<StoryDetailsPage> {
 class _NotFoundState extends StatelessWidget {
   const _NotFoundState({required this.storyId});
   final String storyId;
+
+  void _onBack(BuildContext context) {
+    final router = GoRouter.of(context);
+    if (router.canPop()) {
+      context.pop();
+    } else {
+      context.go('/student/library');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -143,8 +194,8 @@ class _NotFoundState extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 TextButton.icon(
-                  onPressed: () => context.pop(),
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                  onPressed: () => _onBack(context),
+                  icon: const Icon(Icons.arrow_back_rounded, size: 18),
                   label: const Text('Back'),
                 ),
               ],
@@ -177,7 +228,7 @@ class _HeroHeader extends StatelessWidget {
             top: 6,
             child: IconButton(
               onPressed: onBack,
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
             ),
           ),
           Align(
