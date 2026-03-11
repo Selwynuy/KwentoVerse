@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../stories/data/story_providers.dart';
 import '../../stories/domain/story.dart';
 import '../data/quiz_result_providers.dart';
 import '../data/student_profile_providers.dart';
 import '../data/student_profile_repository.dart';
+import '../data/story_read_providers.dart';
 import '../domain/quiz_result.dart';
 import 'avatar_icons.dart';
 import 'student_theme.dart';

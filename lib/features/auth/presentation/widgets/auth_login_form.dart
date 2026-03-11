@@ -54,18 +54,26 @@ class _AuthLoginFormState extends ConsumerState<AuthLoginForm> {
           Text(
             widget.title,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 14,
               fontWeight: FontWeight.w700,
               color: color,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           TextField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
+            style: const TextStyle(fontSize: 13),
             decoration: InputDecoration(
               labelText: 'Email',
-              labelStyle: TextStyle(color: color),
+              labelStyle: TextStyle(
+                color: color,
+                fontSize: 12,
+              ),
+              hintStyle: TextStyle(
+                color: color.withValues(alpha: 0.8),
+                fontSize: 12,
+              ),
               border: OutlineInputBorder(
                 borderSide: BorderSide(color: color),
               ),
@@ -81,9 +89,17 @@ class _AuthLoginFormState extends ConsumerState<AuthLoginForm> {
           TextField(
             controller: _passwordController,
             obscureText: true,
+            style: const TextStyle(fontSize: 13),
             decoration: InputDecoration(
               labelText: 'Password',
-              labelStyle: TextStyle(color: color),
+              labelStyle: TextStyle(
+                color: color,
+                fontSize: 12,
+              ),
+              hintStyle: TextStyle(
+                color: color.withValues(alpha: 0.8),
+                fontSize: 12,
+              ),
               border: OutlineInputBorder(
                 borderSide: BorderSide(color: color),
               ),
@@ -111,8 +127,8 @@ class _AuthLoginFormState extends ConsumerState<AuthLoginForm> {
               ),
               child: auth.isLoading
                   ? const SizedBox(
-                      width: 18,
-                      height: 18,
+                      width: 16,
+                      height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -120,15 +136,19 @@ class _AuthLoginFormState extends ConsumerState<AuthLoginForm> {
                     )
                   : Text(
                       widget.buttonText,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
                     ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           TextButton(
             onPressed: widget.onToggle,
             style: TextButton.styleFrom(
               foregroundColor: Colors.black.withValues(alpha: 0.65),
+              textStyle: const TextStyle(fontSize: 12),
             ),
             child: Text(widget.toggleText),
           ),

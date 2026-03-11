@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/supabase/supabase_providers.dart';
 import '../data/student_profile_providers.dart';
+import 'avatar_icons.dart';
+import 'student_theme.dart';
 
 class StudentProfilePage extends ConsumerStatefulWidget {
   const StudentProfilePage({super.key});
@@ -13,8 +15,8 @@ class StudentProfilePage extends ConsumerStatefulWidget {
 }
 
 class _StudentProfilePageState extends ConsumerState<StudentProfilePage> {
-  static const _accent = Color(0xFFF59E0B);
-  static const _bg = Color(0xFFFAFAFA);
+  static const _accent = StudentTheme.primaryOrange;
+  static const _bg = Colors.white;
   int? _pendingAvatarIndex;
   bool _savingAvatar = false;
 
@@ -301,7 +303,7 @@ class _SmallAvatarChip extends StatelessWidget {
           ),
         ],
       ),
-      child: Icon(_avatarIconFor(index), size: 26, color: Colors.black87),
+      child: Icon(avatarIconFor(index), size: 26, color: Colors.black87),
     );
   }
 }
@@ -330,7 +332,7 @@ class _AvatarCircle extends StatelessWidget {
       child: CircleAvatar(
         backgroundColor: Colors.grey.shade200,
         child: Icon(
-          avatarIndex != null ? _avatarIconFor(avatarIndex!) : Icons.person_rounded,
+          avatarIndex != null ? avatarIconFor(avatarIndex!) : Icons.person_rounded,
           size: radius * 0.95,
           color: Colors.black87,
         ),
@@ -378,21 +380,4 @@ class _ErrorState extends StatelessWidget {
   }
 }
 
-IconData _avatarIconFor(int index) {
-  switch (index) {
-    case 0:
-      return Icons.sentiment_satisfied_alt_outlined;
-    case 1:
-      return Icons.emoji_people_outlined;
-    case 2:
-      return Icons.face_retouching_natural_outlined;
-    case 3:
-      return Icons.psychology_alt_outlined;
-    case 4:
-      return Icons.self_improvement_outlined;
-    case 5:
-    default:
-      return Icons.star_border_rounded;
-  }
-}
 

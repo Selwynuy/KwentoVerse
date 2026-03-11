@@ -7,6 +7,7 @@ import '../../dictionary/data/dictionary_providers.dart';
 import '../../dictionary/data/local_dictionary_repository.dart';
 import '../../dictionary/domain/dictionary_term.dart';
 import '../../stories/data/story_providers.dart';
+import '../data/story_read_providers.dart';
 import 'student_theme.dart';
 
 class ReaderPage extends ConsumerStatefulWidget {
@@ -225,8 +226,16 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        onPressed: () => GoRouter.of(context)
-                            .go('/student/evaluation/${widget.storyId}/combined'),
+                        onPressed: () async {
+                          // Mark story as read when student starts the quiz.
+                          await ref
+                              .read(storyReadRepositoryProvider)
+                              .markRead(widget.storyId);
+                          ref.invalidate(myReadStoriesProvider);
+                          if (!context.mounted) return;
+                          GoRouter.of(context)
+                              .go('/student/evaluation/${widget.storyId}/combined');
+                        },
                         child: const Text(
                           'Start Quiz',
                           style: TextStyle(fontWeight: FontWeight.w700),

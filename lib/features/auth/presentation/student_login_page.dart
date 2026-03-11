@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import 'widgets/auth_login_form.dart';
 
-class LoginPage extends ConsumerWidget {
-  const LoginPage({super.key});
+class StudentLoginPage extends ConsumerWidget {
+  const StudentLoginPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -14,9 +14,10 @@ class LoginPage extends ConsumerWidget {
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.only(top: 48, left: 24, right: 24, bottom: 120),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 32, left: 16, right: 16, bottom: 32),
             child: Column(
+              mainAxisSize: MainAxisSize.max,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Align(
@@ -27,14 +28,14 @@ class LoginPage extends ConsumerWidget {
                     onPressed: () => context.go('/'),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Image.asset(
                   'assets/kwentoverse_logo.png',
-                  width: 120,
-                  height: 120,
+                  width: 96,
+                  height: 96,
                   filterQuality: FilterQuality.none,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 AuthLoginForm(
                   title: 'LOGIN',
                   primaryColor: const Color(0xFFF59E0B),
@@ -42,7 +43,7 @@ class LoginPage extends ConsumerWidget {
                   toggleText: 'or register',
                   onToggle: () => context.go('/register'),
                 ),
-                const SizedBox(height: 8),
+                const Spacer(),
               ],
             ),
           ),

@@ -7,6 +7,7 @@ import '../../stories/data/downloaded_story_cache.dart';
 import '../../stories/data/story_providers.dart';
 import '../../stories/domain/story.dart';
 import '../../../shared/images/local_file_image.dart';
+import '../data/quiz_question_providers.dart';
 import 'student_theme.dart';
 
 class StoryDetailsPage extends ConsumerStatefulWidget {
@@ -20,7 +21,6 @@ class StoryDetailsPage extends ConsumerStatefulWidget {
 
 class _StoryDetailsPageState extends ConsumerState<StoryDetailsPage> {
   int _rating = 0;
-  bool _isInLibrary = false;
   bool _ratingSubmitted = false;
 
   void _onBack(BuildContext context) {
@@ -53,7 +53,7 @@ class _StoryDetailsPageState extends ConsumerState<StoryDetailsPage> {
         final myRating = ref.watch(storyMyRatingProvider(widget.storyId)).when(
               data: (v) => v,
               loading: () => null,
-              error: (_, __) => null,
+              error: (e, st) => null,
             );
         final displayedRating = myRating ?? _rating;
         final hasRated = myRating != null || _ratingSubmitted;
@@ -101,52 +101,47 @@ class _StoryDetailsPageState extends ConsumerState<StoryDetailsPage> {
                               averageRating: story.averageRating,
                             ),
                             const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _PillButton(
-                                    label: _isInLibrary ? 'Added' : 'Add',
-                                    icon: _isInLibrary ? Icons.check_rounded : Icons.add_rounded,
-                                    filled: false,
-                                    onTap: () =>
-                                        setState(() => _isInLibrary = !_isInLibrary),
-                                    height: 44,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: _PillButton(
-                                    label: 'Read',
-                                    icon: Icons.menu_book_rounded,
-                                    filled: true,
-                                    onTap: () => context.go('/student/reader/${story.id}'),
-                                    height: 44,
-                                  ),
-                                ),
-                              ],
+                            SizedBox(
+                              width: double.infinity,
+                              child: _PillButton(
+                                label: 'Read',
+                                icon: Icons.menu_book_rounded,
+                                filled: true,
+                                onTap: () => context.go('/student/reader/${story.id}'),
+                                height: 44,
+                              ),
                             ),
                             const SizedBox(height: 10),
                             Builder(
                               builder: (context) {
-                                final isAvailableOffline = DownloadedStoryCache.instance.get(story.id) != null;
+                                final isAvailableOffline = DownloadedStoryCache.instance.has(story.id);
                                 return _PillButton(
-                                  label: isAvailableOffline ? 'Available offline' : 'Download for offline',
-                                  icon: isAvailableOffline ? Icons.offline_pin_rounded : Icons.download_rounded,
+                                  label: isAvailableOffline
+                                      ? 'Available offline'
+                                      : 'Download for offline',
+                                  icon: isAvailableOffline
+                                      ? Icons.offline_pin_rounded
+                                      : Icons.download_rounded,
                                   filled: false,
-                                  onTap: () {
-                                    if (!isAvailableOffline) {
-                                      DownloadedStoryCache.instance.put(story);
-                                      setState(() {});
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Downloaded. You can read this book offline.'),
-                                            duration: Duration(seconds: 2),
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  },
+                                  onTap: isAvailableOffline
+                                      ? () {}
+                                      : () async {
+                                          // Download story + questions together.
+                                          final questions = await ref.read(
+                                              quizQuestionsProvider(story.id).future);
+                                          await DownloadedStoryCache.instance
+                                              .put(story, questions: questions);
+                                          setState(() {});
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                    'Downloaded. You can read this book offline.'),
+                                                duration: Duration(seconds: 2),
+                                              ),
+                                            );
+                                          }
+                                        },
                                   height: 44,
                                 );
                               },
@@ -216,21 +211,18 @@ class _StoryDetailsPageState extends ConsumerState<StoryDetailsPage> {
                             ),
                             onPressed: _rating > 0
                                 ? () async {
-                                    if (widget.storyId != 'sample-1') {
-                                      try {
-                                        await ref
-                                            .read(supabaseStoryRepositoryProvider)
-                                            .submitRating(widget.storyId, _rating);
-                                        ref.invalidate(storyMyRatingProvider(widget.storyId));
-                                      } catch (_) {
-                                        if (mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                                content: Text('Could not save rating')),
-                                          );
-                                        }
-                                        return;
+                                    try {
+                                      await ref
+                                          .read(supabaseStoryRepositoryProvider)
+                                          .submitRating(widget.storyId, _rating);
+                                      ref.invalidate(storyMyRatingProvider(widget.storyId));
+                                    } catch (_) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Could not save rating')),
+                                        );
                                       }
+                                      return;
                                     }
                                     setState(() => _ratingSubmitted = true);
                                     if (mounted) {
@@ -543,49 +535,6 @@ class _StarRating extends StatelessWidget {
             ),
           );
         }),
-      ),
-    );
-  }
-}
-
-class _ActionChip extends StatelessWidget {
-  const _ActionChip({
-    required this.label,
-    required this.icon,
-    required this.filled,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool filled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final bg = filled ? StudentTheme.primaryOrange : StudentTheme.cardCream;
-    final fg = filled ? Colors.white : StudentTheme.titleDark;
-    final border = filled ? null : Border.all(color: StudentTheme.primaryOrange.withValues(alpha: 0.20));
-
-    return Material(
-      color: bg,
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
-        child: Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(999), border: border),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 18, color: fg),
-              const SizedBox(width: 6),
-              Text(label, style: StudentTheme.actionLabel.copyWith(color: fg, fontSize: 13)),
-            ],
-          ),
-        ),
       ),
     );
   }

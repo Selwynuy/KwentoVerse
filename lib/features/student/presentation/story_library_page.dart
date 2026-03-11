@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../stories/data/story_providers.dart';
 import '../../stories/domain/story.dart';
+import '../data/story_read_providers.dart';
 import 'student_theme.dart';
 
 class StoryLibraryPage extends ConsumerStatefulWidget {
@@ -19,6 +20,7 @@ class _StoryLibraryPageState extends ConsumerState<StoryLibraryPage> {
   @override
   Widget build(BuildContext context) {
     final storiesAsync = ref.watch(currentUserSchoolStoriesProvider);
+    final readStoriesAsync = ref.watch(myReadStoriesProvider);
 
     return storiesAsync.when(
       loading: () => const Center(
@@ -35,30 +37,32 @@ class _StoryLibraryPageState extends ConsumerState<StoryLibraryPage> {
         ),
       ),
       data: (stories) {
+        final readIds = readStoriesAsync.maybeWhen(
+          data: (v) => {for (final s in v) s.id},
+          orElse: () => const <String>{},
+        );
+
         final myLibrary = stories;
         final forYou = stories.reversed.toList(growable: false);
 
-        final currentReadings = myLibrary.isNotEmpty
-            ? [
-                _ReadingItem(
-                  storyId: myLibrary.first.id,
-                  title: myLibrary.first.title,
-                  author: myLibrary.first.author,
-                  progress: '0% done',
-                ),
-              ]
-            : const <_ReadingItem>[];
+        final currentReadings = myLibrary
+            .where((s) => !readIds.contains(s.id))
+            .take(5)
+            .map((s) => _ReadingItem(
+                  storyId: s.id,
+                  title: s.title,
+                  author: s.author,
+                  progress: 'In progress',
+                ))
+            .toList();
 
-        // Exercises = all stories from Supabase (school-scoped); each has a quiz.
         final exercises = myLibrary
-            .map(
-              (s) => _ReadingItem(
-                storyId: s.id,
-                title: s.title,
-                author: s.author,
-                progress: 'Quiz',
-              ),
-            )
+            .map((s) => _ReadingItem(
+                  storyId: s.id,
+                  title: s.title,
+                  author: s.author,
+                  progress: readIds.contains(s.id) ? 'Done' : 'Quiz',
+                ))
             .toList(growable: false);
 
         return Column(

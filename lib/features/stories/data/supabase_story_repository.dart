@@ -27,7 +27,7 @@ class SupabaseStoryRepository {
     final List<dynamic> rows = await q.timeout(_timeout);
     return rows
         .whereType<Map<String, dynamic>>()
-        .map(_mapRowToStory)
+        .map(mapRowToStory)
         .toList(growable: false);
   }
 
@@ -37,23 +37,16 @@ class SupabaseStoryRepository {
 
     if (row == null) return null;
     if (row is! Map<String, dynamic>) return null;
-    return _mapRowToStory(row);
+    return mapRowToStory(row);
   }
 
-  Story _mapRowToStory(Map<String, dynamic> row) {
+  Story mapRowToStory(Map<String, dynamic> row) {
     final title = (row['title'] as String?)?.trim().isNotEmpty == true ? (row['title'] as String).trim() : 'Untitled Story';
     final summary = (row['summary'] as String?) ?? '';
     final difficultyLabel = (row['difficulty_label'] as String?) ??
         (row['difficulty_level'] as String?) ??
         '';
     final contentText = (row['content_text'] as String?) ?? '';
-    final isArchived = (row['is_archived'] as bool?) == true || (row['archived'] as bool?) == true;
-
-    // Basic safeguard: hide archived stories from the student-side repository.
-    if (isArchived) {
-      // This should normally be filtered at the query level, but keep a guard.
-    }
-
     final paragraphs = _segmentParagraphs(contentText.isNotEmpty ? contentText : summary);
 
     final avg = row['average_rating'];
@@ -139,7 +132,7 @@ class SupabaseStoryRepository {
       final row = raw as Map<String, dynamic>?;
       if (row == null) continue;
       final storyMap = row['stories'] as Map<String, dynamic>?;
-      if (storyMap != null) list.add(_mapRowToStory(storyMap));
+      if (storyMap != null) list.add(mapRowToStory(storyMap));
     }
     return list;
   }

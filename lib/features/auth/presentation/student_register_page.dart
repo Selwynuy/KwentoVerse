@@ -4,19 +4,18 @@ import 'package:go_router/go_router.dart';
 
 import '../application/auth_state.dart';
 
-class RegisterPage extends ConsumerStatefulWidget {
-  const RegisterPage({super.key});
+class StudentRegisterPage extends ConsumerStatefulWidget {
+  const StudentRegisterPage({super.key});
 
   @override
-  ConsumerState<RegisterPage> createState() => _RegisterPageState();
+  ConsumerState<StudentRegisterPage> createState() => _StudentRegisterPageState();
 }
 
-class _RegisterPageState extends ConsumerState<RegisterPage> {
+class _StudentRegisterPageState extends ConsumerState<StudentRegisterPage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
-  UserRole _role = UserRole.student;
 
   @override
   void dispose() {
@@ -36,10 +35,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.only(top: 48, left: 24, right: 24, bottom: 120),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 20, left: 12, right: 12, bottom: 20),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: MainAxisSize.max,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Align(
@@ -50,14 +49,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     onPressed: () => context.go('/'),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 4),
                 Image.asset(
                   'assets/kwentoverse_logo.png',
-                  width: 120,
-                  height: 120,
+                  width: 80,
+                  height: 80,
                   filterQuality: FilterQuality.none,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
@@ -65,24 +64,33 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: const Color(0xFFF59E0B)),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
                         'REGISTER',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFFF59E0B),
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 10),
                       TextField(
                         controller: _nameController,
+                        style: const TextStyle(fontSize: 13),
                         decoration: const InputDecoration(
                           labelText: 'Full name',
-                          labelStyle: TextStyle(color: Color(0xFFF59E0B)),
+                          labelStyle: TextStyle(
+                            color: Color(0xFFF59E0B),
+                            fontSize: 12,
+                          ),
+                          hintStyle: TextStyle(
+                            color: Color(0xFFF59E0B),
+                            fontSize: 12,
+                          ),
                           border: OutlineInputBorder(
                             borderSide: BorderSide(color: Color(0xFFF59E0B)),
                           ),
@@ -94,13 +102,21 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       TextField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
+                        style: const TextStyle(fontSize: 13),
                         decoration: const InputDecoration(
                           labelText: 'Email',
-                          labelStyle: TextStyle(color: Color(0xFFF59E0B)),
+                          labelStyle: TextStyle(
+                            color: Color(0xFFF59E0B),
+                            fontSize: 12,
+                          ),
+                          hintStyle: TextStyle(
+                            color: Color(0xFFF59E0B),
+                            fontSize: 12,
+                          ),
                           border: OutlineInputBorder(
                             borderSide: BorderSide(color: Color(0xFFF59E0B)),
                           ),
@@ -112,13 +128,21 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       TextField(
                         controller: _passwordController,
                         obscureText: true,
+                        style: const TextStyle(fontSize: 13),
                         decoration: const InputDecoration(
                           labelText: 'Password',
-                          labelStyle: TextStyle(color: Color(0xFFF59E0B)),
+                          labelStyle: TextStyle(
+                            color: Color(0xFFF59E0B),
+                            fontSize: 12,
+                          ),
+                          hintStyle: TextStyle(
+                            color: Color(0xFFF59E0B),
+                            fontSize: 12,
+                          ),
                           border: OutlineInputBorder(
                             borderSide: BorderSide(color: Color(0xFFF59E0B)),
                           ),
@@ -130,13 +154,21 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       TextField(
                         controller: _confirmController,
                         obscureText: true,
+                        style: const TextStyle(fontSize: 13),
                         decoration: const InputDecoration(
                           labelText: 'Confirm password',
-                          labelStyle: TextStyle(color: Color(0xFFF59E0B)),
+                          labelStyle: TextStyle(
+                            color: Color(0xFFF59E0B),
+                            fontSize: 12,
+                          ),
+                          hintStyle: TextStyle(
+                            color: Color(0xFFF59E0B),
+                            fontSize: 12,
+                          ),
                           border: OutlineInputBorder(
                             borderSide: BorderSide(color: Color(0xFFF59E0B)),
                           ),
@@ -149,50 +181,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      DropdownButtonFormField<UserRole>(
-                        initialValue: _role,
-                        style: const TextStyle(color: Color(0xFFF59E0B)),
-                        decoration: const InputDecoration(
-                          labelText: 'Role',
-                          labelStyle: TextStyle(color: Color(0xFFF59E0B)),
-                          border: OutlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFFF59E0B)),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFFF59E0B)),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFFF59E0B)),
-                          ),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: UserRole.student,
-                            child: Text(
-                              'Student',
-                              style: TextStyle(color: Color(0xFFF59E0B)),
-                            ),
-                          ),
-                          DropdownMenuItem(
-                            value: UserRole.educator,
-                            child: Text(
-                              'Educator',
-                              style: TextStyle(color: Color(0xFFF59E0B)),
-                            ),
-                          ),
-                          DropdownMenuItem(
-                            value: UserRole.admin,
-                            child: Text(
-                              'Admin',
-                              style: TextStyle(color: Color(0xFFF59E0B)),
-                            ),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) setState(() => _role = value);
-                        },
-                      ),
-                      const SizedBox(height: 18),
                       SizedBox(
                         width: double.infinity,
                         height: 40,
@@ -208,8 +196,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           ),
                           child: auth.isLoading
                               ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
+                                  width: 16,
+                                  height: 16,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -217,22 +205,26 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                 )
                               : const Text(
                                   'Register',
-                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
                                 ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       TextButton(
                         onPressed: () => context.go('/login'),
                         style: TextButton.styleFrom(
                           foregroundColor: Colors.black.withValues(alpha: 0.65),
+                          textStyle: const TextStyle(fontSize: 12),
                         ),
                         child: const Text('or login'),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                const Spacer(),
               ],
             ),
           ),
@@ -258,7 +250,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           email: email,
           password: password,
           fullName: name,
-          role: _role,
+          role: UserRole.student,
         );
 
     if (!mounted) return;

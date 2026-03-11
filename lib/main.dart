@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
 import 'core/supabase/supabase_config.dart';
+import 'features/stories/data/downloaded_story_cache.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +13,9 @@ Future<void> main() async {
     url: supabaseUrl,
     anonKey: supabaseAnonKey,
   );
+
+  // Load persisted offline story cache before app starts.
+  await DownloadedStoryCache.instance.load();
 
   runApp(const ProviderScope(child: App()));
 }

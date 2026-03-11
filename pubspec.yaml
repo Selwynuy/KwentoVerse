@@ -42,6 +42,7 @@ dependencies:
   dio: ^5.9.0
   flutter_tts: ^4.2.3
   supabase_flutter: ^2.8.0
+  shared_preferences: ^2.3.0
 
 dev_dependencies:
   flutter_test:

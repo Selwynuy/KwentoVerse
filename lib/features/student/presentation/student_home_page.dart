@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../stories/data/story_providers.dart';
 import '../../stories/domain/story.dart';
+import '../data/school_educators_providers.dart';
+import '../data/school_educators_repository.dart';
+import '../data/student_profile_providers.dart';
 import 'student_theme.dart';
 
 class StudentHomePage extends ConsumerStatefulWidget {
@@ -14,45 +17,45 @@ class StudentHomePage extends ConsumerStatefulWidget {
 }
 
 class _StudentHomePageState extends ConsumerState<StudentHomePage> {
-  static const _educators = [
-    'Alina Slyshik',
-    'Josh Funk',
-    'Mandy Archer',
-    'Zietlow Miller',
-    'Hannah Peters',
-  ];
-
-  final _schoolSearchController = TextEditingController();
-  String _appliedSchoolBookQuery = '';
+  final _searchController = TextEditingController();
+  String _appliedQuery = '';
 
   @override
   void dispose() {
-    _schoolSearchController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
-  void _applySchoolBookSearch() {
-    setState(() => _appliedSchoolBookQuery = _schoolSearchController.text);
+  void _applySearch() {
+    setState(() => _appliedQuery = _searchController.text);
     FocusManager.instance.primaryFocus?.unfocus();
   }
 
-  void _clearSchoolBookSearch() {
-    _schoolSearchController.clear();
-    setState(() => _appliedSchoolBookQuery = '');
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() => _appliedQuery = '');
     FocusManager.instance.primaryFocus?.unfocus();
   }
 
   @override
   Widget build(BuildContext context) {
-    final storiesAsync = ref.watch(searchStoriesProvider(_appliedSchoolBookQuery));
+    final storiesAsync = ref.watch(searchStoriesProvider(_appliedQuery));
+    final profileAsync = ref.watch(myStudentProfileProvider);
+    final educatorsAsync = ref.watch(schoolEducatorsProvider);
+
+    final schoolName = profileAsync.maybeWhen(
+      data: (p) => p.schoolName ?? 'My School',
+      orElse: () => 'My School',
+    );
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildSchoolCard(),
+        _SchoolCard(name: schoolName),
         const SizedBox(height: 20),
-        _buildEducatorSection(),
+        _EducatorSection(educatorsAsync: educatorsAsync),
         const SizedBox(height: 20),
-        _buildSchoolLibrarySection(),
+        _buildLibraryHeader(),
         const SizedBox(height: 16),
         storiesAsync.when(
           loading: () => const Center(
@@ -61,9 +64,9 @@ class _StudentHomePageState extends ConsumerState<StudentHomePage> {
               child: CircularProgressIndicator(color: StudentTheme.primaryOrange),
             ),
           ),
-          error: (err, _) => Center(
+          error: (e, st) => const Center(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
               child: Text(
                 'Could not load school books.',
                 textAlign: TextAlign.center,
@@ -71,13 +74,74 @@ class _StudentHomePageState extends ConsumerState<StudentHomePage> {
               ),
             ),
           ),
-          data: (stories) => _buildBookGrid(stories),
+          data: (stories) => _BookGrid(
+            stories: stories,
+            emptyQuery: _appliedQuery.trim().isEmpty,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildSchoolCard() {
+  Widget _buildLibraryHeader() {
+    final hasText = _searchController.text.trim().isNotEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('School Library', style: StudentTheme.sectionTitle),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _searchController,
+          textInputAction: TextInputAction.search,
+          onSubmitted: (_) => _applySearch(),
+          decoration: InputDecoration(
+            hintText: 'Search for books',
+            hintStyle: const TextStyle(color: StudentTheme.secondaryGray),
+            prefixIcon: const Icon(Icons.search_rounded,
+                color: StudentTheme.secondaryGray, size: 22),
+            suffixIcon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hasText)
+                  IconButton(
+                    tooltip: 'Clear',
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    color: StudentTheme.secondaryGray,
+                    onPressed: _clearSearch,
+                  ),
+                IconButton(
+                  tooltip: 'Search',
+                  icon: const Icon(Icons.search_rounded, size: 22),
+                  color: StudentTheme.secondaryGray,
+                  onPressed: _applySearch,
+                ),
+              ],
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: StudentTheme.cardLightOrange),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: StudentTheme.cardLightOrange),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SchoolCard extends StatelessWidget {
+  const _SchoolCard({required this.name});
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
@@ -87,16 +151,13 @@ class _StudentHomePageState extends ConsumerState<StudentHomePage> {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.school_rounded,
-            color: StudentTheme.titleDark,
-            size: 28,
-          ),
+          const Icon(Icons.school_rounded,
+              color: StudentTheme.titleDark, size: 28),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              'GSC SPED Integrated School',
-              style: TextStyle(
+              name,
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: StudentTheme.titleDark,
@@ -107,8 +168,14 @@ class _StudentHomePageState extends ConsumerState<StudentHomePage> {
       ),
     );
   }
+}
 
-  Widget _buildEducatorSection() {
+class _EducatorSection extends StatelessWidget {
+  const _EducatorSection({required this.educatorsAsync});
+  final AsyncValue<List<SchoolEducator>> educatorsAsync;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
@@ -119,154 +186,103 @@ class _StudentHomePageState extends ConsumerState<StudentHomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Educator',
-                style: StudentTheme.sectionTitle,
-              ),
-              InkWell(
-                onTap: () {},
-                borderRadius: BorderRadius.circular(10),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  child: Row(
-                    children: [
-                      Text(
-                        'See More',
-                        style: StudentTheme.actionLabel,
-                      ),
-                      SizedBox(width: 4),
-                      Icon(Icons.chevron_right_rounded, size: 18, color: StudentTheme.titleDark),
-                    ],
-                  ),
-                ),
-              ),
+              Text('Educator', style: StudentTheme.sectionTitle),
             ],
           ),
           const SizedBox(height: 10),
-          SizedBox(
-            height: 92,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: _educators.length,
-              separatorBuilder: (_, i) => const SizedBox(width: 14),
-              itemBuilder: (context, i) {
-                final name = _educators[i];
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            blurRadius: 10,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: CircleAvatar(
-                        radius: 26,
-                        backgroundColor: Colors.white,
-                        child: Icon(
-                          Icons.person_rounded,
-                          size: 28,
-                          color: StudentTheme.primaryOrange,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    SizedBox(
-                      width: 76,
-                      child: Text(
-                        name,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          height: 1.15,
-                          fontWeight: FontWeight.w600,
-                          color: StudentTheme.titleDark,
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
+          educatorsAsync.when(
+            loading: () => const SizedBox(
+              height: 92,
+              child: Center(child: CircularProgressIndicator(
+                  color: StudentTheme.primaryOrange, strokeWidth: 2)),
             ),
+            error: (e, st) => const SizedBox(
+              height: 40,
+              child: Center(
+                child: Text('Could not load educators.',
+                    style: TextStyle(
+                        color: StudentTheme.secondaryGray, fontSize: 12)),
+              ),
+            ),
+            data: (educators) {
+              if (educators.isEmpty) {
+                return const SizedBox(
+                  height: 40,
+                  child: Center(
+                    child: Text('No educators assigned yet.',
+                        style: TextStyle(
+                            color: StudentTheme.secondaryGray, fontSize: 12)),
+                  ),
+                );
+              }
+              return SizedBox(
+                height: 92,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: educators.length,
+                  separatorBuilder: (e, st) => const SizedBox(width: 14),
+                  itemBuilder: (context, i) {
+                    final name = educators[i].fullName;
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.06),
+                                blurRadius: 10,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: const CircleAvatar(
+                            radius: 26,
+                            backgroundColor: Colors.white,
+                            child: Icon(Icons.person_rounded,
+                                size: 28, color: StudentTheme.primaryOrange),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        SizedBox(
+                          width: 76,
+                          child: Text(
+                            name,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              height: 1.15,
+                              fontWeight: FontWeight.w600,
+                              color: StudentTheme.titleDark,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              );
+            },
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildSchoolLibrarySection() {
-    final hasText = _schoolSearchController.text.trim().isNotEmpty;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'School Library',
-          style: StudentTheme.sectionTitle,
-        ),
-        const SizedBox(height: 10),
-        TextField(
-          controller: _schoolSearchController,
-          textInputAction: TextInputAction.search,
-          onSubmitted: (_) => _applySchoolBookSearch(),
-          decoration: InputDecoration(
-            hintText: 'Search for books',
-            hintStyle: const TextStyle(color: StudentTheme.secondaryGray),
-            prefixIcon: Icon(
-              Icons.search_rounded,
-              color: StudentTheme.secondaryGray,
-              size: 22,
-            ),
-            suffixIcon: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (hasText)
-                  IconButton(
-                    tooltip: 'Clear',
-                    icon: const Icon(Icons.close_rounded, size: 20),
-                    color: StudentTheme.secondaryGray,
-                    onPressed: _clearSchoolBookSearch,
-                  ),
-                IconButton(
-                  tooltip: 'Search',
-                  icon: const Icon(Icons.search_rounded, size: 22),
-                  color: StudentTheme.secondaryGray,
-                  onPressed: _applySchoolBookSearch,
-                ),
-              ],
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: StudentTheme.cardLightOrange),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: StudentTheme.cardLightOrange),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          ),
-        ),
-      ],
-    );
-  }
+class _BookGrid extends StatelessWidget {
+  const _BookGrid({required this.stories, required this.emptyQuery});
+  final List<Story> stories;
+  final bool emptyQuery;
 
-  Widget _buildBookGrid(List<Story> stories) {
-    const titleLines = 2;
-    const titleFontSize = 12.0;
-    const titleLineHeight = 1.15;
-    final emptyQuery = _appliedSchoolBookQuery.trim().isEmpty;
-
+  @override
+  Widget build(BuildContext context) {
     if (stories.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(16),
@@ -281,22 +297,14 @@ class _StudentHomePageState extends ConsumerState<StudentHomePage> {
             Icon(Icons.search_off_rounded, color: StudentTheme.secondaryGray, size: 40),
             const SizedBox(height: 10),
             Text(
-              emptyQuery ? 'No books in your school yet.' : 'No books match your search',
+              emptyQuery
+                  ? 'No books in your school yet.'
+                  : 'No books match your search.',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: StudentTheme.titleDark,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              emptyQuery ? '' : 'Try a different keyword.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 12,
-                color: StudentTheme.secondaryGray,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -340,19 +348,16 @@ class _StudentHomePageState extends ConsumerState<StudentHomePage> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  SizedBox(
-                    height: titleFontSize * titleLineHeight * titleLines,
-                    child: Text(
-                      story.title,
-                      textAlign: TextAlign.center,
-                      maxLines: titleLines,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: titleFontSize,
-                        height: titleLineHeight,
-                        fontWeight: FontWeight.w600,
-                        color: StudentTheme.titleDark,
-                      ),
+                  Text(
+                    story.title,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      height: 1.15,
+                      fontWeight: FontWeight.w600,
+                      color: StudentTheme.titleDark,
                     ),
                   ),
                 ],
@@ -371,28 +376,26 @@ class _BookCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageProvider = _coverImageProvider(story);
+    ImageProvider? provider;
+    if (story.coverStoragePath != null &&
+        story.coverStoragePath!.trim().isNotEmpty) {
+      provider = NetworkImage(story.coverStoragePath!);
+    } else if (story.coverAssetPath != null &&
+        story.coverAssetPath!.trim().isNotEmpty) {
+      provider = AssetImage(story.coverAssetPath!);
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: StudentTheme.cardLightOrange,
         borderRadius: BorderRadius.circular(12),
       ),
       clipBehavior: Clip.antiAlias,
-      child: imageProvider == null
+      child: provider == null
           ? const Center(
-              child: Icon(Icons.auto_stories_rounded, size: 48, color: StudentTheme.primaryOrange),
-            )
-          : Image(image: imageProvider, fit: BoxFit.cover),
+              child: Icon(Icons.auto_stories_rounded,
+                  size: 48, color: StudentTheme.primaryOrange))
+          : Image(image: provider, fit: BoxFit.cover),
     );
-  }
-
-  ImageProvider? _coverImageProvider(Story story) {
-    if (story.coverStoragePath != null && story.coverStoragePath!.trim().isNotEmpty) {
-      return NetworkImage(story.coverStoragePath!);
-    }
-    if (story.coverAssetPath != null && story.coverAssetPath!.trim().isNotEmpty) {
-      return AssetImage(story.coverAssetPath!);
-    }
-    return null;
   }
 }

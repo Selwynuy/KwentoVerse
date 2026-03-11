@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/application/auth_state.dart';
-import '../../features/auth/presentation/login_page.dart';
+import '../../features/auth/presentation/student_login_page.dart';
 import '../../features/auth/presentation/educator_login_page.dart';
 import '../../features/auth/presentation/onboarding_page.dart';
-import '../../features/auth/presentation/register_page.dart';
+import '../../features/auth/presentation/student_register_page.dart';
+import '../../features/auth/presentation/educator_register_page.dart';
 import '../../features/landing/presentation/landing_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
 import '../../features/admin/presentation/admin_shell.dart';
@@ -24,7 +25,6 @@ import '../../features/student/presentation/story_details_page.dart';
 import '../../features/student/presentation/reader_page.dart';
 import '../../features/student/presentation/evaluation_page.dart';
 import '../../features/student/presentation/progress_page.dart';
-import '../../features/student/presentation/badges_page.dart';
 import '../../features/student/presentation/student_profile_page.dart';
 import '../../features/student/presentation/avatar_selection_page.dart';
 import '../../features/student/presentation/enrollment_page.dart';
@@ -74,9 +74,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/', builder: (context, state) => const LandingPage()),
       GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingPage()),
-      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+      GoRoute(path: '/login', builder: (context, state) => const StudentLoginPage()),
       GoRoute(path: '/login-educator', builder: (context, state) => const EducatorLoginPage()),
-      GoRoute(path: '/register', builder: (context, state) => const RegisterPage()),
+      GoRoute(path: '/register', builder: (context, state) => const StudentRegisterPage()),
+      GoRoute(
+        path: '/register-educator',
+        builder: (context, state) => const EducatorRegisterPage(),
+      ),
       GoRoute(
         path: '/student/avatar-select',
         builder: (context, state) => const AvatarSelectionPage(),
@@ -94,7 +98,6 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/student/library', builder: (context, state) => const StoryLibraryPage()),
           GoRoute(path: '/student/search', builder: (context, state) => const StudentSearchPage()),
           GoRoute(path: '/student/progress', builder: (context, state) => const ProgressPage()),
-          GoRoute(path: '/student/badges', builder: (context, state) => const BadgesPage()),
           GoRoute(path: '/student/profile', builder: (context, state) => const StudentProfilePage()),
         ],
       ),

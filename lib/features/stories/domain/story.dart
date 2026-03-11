@@ -22,15 +22,8 @@ class Story {
   final String description;
   final String difficultyLabel;
   final List<String> paragraphs;
-
-  /// Optional genre label shown in the details page.
   final String? genre;
-
-  /// Optional publication date label (pre-formatted string).
   final String? publicationDate;
-
-  /// Placeholder asset to use when no network/local cover is available.
-  /// Example: `assets/kwentoverse_logo.png`.
   final String? coverAssetPath;
 
   /// Supabase Storage key/path (canonical source of truth), e.g. `covers/story-123.jpg`.
@@ -38,14 +31,51 @@ class Story {
   final String? coverStoragePath;
 
   /// Local on-device path for downloaded books (preferred when available).
-  /// Not available on web builds.
   final String? localCoverPath;
   final int? estimatedMinutes;
-
-  /// Total reads (placeholder until wired to analytics).
   final int? readsCount;
-
-  /// Average rating out of 5 (placeholder until wired to ratings).
   final double? averageRating;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'author': author,
+        'description': description,
+        'difficulty_label': difficultyLabel,
+        'paragraphs': paragraphs,
+        'genre': genre,
+        'publication_date': publicationDate,
+        'cover_asset_path': coverAssetPath,
+        'cover_storage_path': coverStoragePath,
+        'local_cover_path': localCoverPath,
+        'estimated_minutes': estimatedMinutes,
+        'reads_count': readsCount,
+        'average_rating': averageRating,
+      };
+
+  factory Story.fromJson(Map<String, dynamic> json) {
+    final rawParagraphs = json['paragraphs'];
+    List<String> paragraphs = [];
+    if (rawParagraphs is List) {
+      paragraphs = rawParagraphs.map((e) => e.toString()).toList();
+    }
+    final avg = json['average_rating'];
+    return Story(
+      id: json['id'] as String,
+      title: (json['title'] as String?) ?? 'Untitled',
+      author: (json['author'] as String?) ?? '',
+      description: (json['description'] as String?) ?? '',
+      difficultyLabel: (json['difficulty_label'] as String?) ?? '',
+      paragraphs: paragraphs,
+      genre: json['genre'] as String?,
+      publicationDate: json['publication_date'] as String?,
+      coverAssetPath: json['cover_asset_path'] as String?,
+      coverStoragePath: json['cover_storage_path'] as String?,
+      localCoverPath: json['local_cover_path'] as String?,
+      estimatedMinutes: json['estimated_minutes'] as int?,
+      readsCount: json['reads_count'] as int?,
+      averageRating: avg is num ? avg.toDouble() : null,
+    );
+  }
 }
 
