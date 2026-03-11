@@ -77,10 +77,12 @@ class _StudentShellState extends ConsumerState<StudentShell> {
         ),
         HamburgerMenuOverlay(
           isOpen: _isMenuOpen,
+          displayName: _studentName,
+          levelLabel: _studentLevel,
+          avatarUrl: _avatarUrl,
           onClose: _closeMenu,
           onProfile: () => context.go('/student/profile'),
           onProgress: () => context.go('/student/progress'),
-          onNotifications: () => context.go('/student/home'),
           onLogout: () => _handleLogout(context),
         ),
       ],

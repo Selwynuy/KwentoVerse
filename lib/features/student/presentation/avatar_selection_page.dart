@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class AvatarSelectionPage extends StatefulWidget {
+import '../data/student_profile_providers.dart';
+
+class AvatarSelectionPage extends ConsumerStatefulWidget {
   const AvatarSelectionPage({super.key});
 
   @override
-  State<AvatarSelectionPage> createState() => _AvatarSelectionPageState();
+  ConsumerState<AvatarSelectionPage> createState() => _AvatarSelectionPageState();
 }
 
-class _AvatarSelectionPageState extends State<AvatarSelectionPage> {
+class _AvatarSelectionPageState extends ConsumerState<AvatarSelectionPage> {
   int? _selectedIndex;
+  bool _saving = false;
 
   @override
   Widget build(BuildContext context) {
@@ -67,27 +71,49 @@ class _AvatarSelectionPageState extends State<AvatarSelectionPage> {
                       SizedBox(
                         width: double.infinity,
                         height: 48,
-                        child: ElevatedButton(
-                          onPressed: _selectedIndex == null
+                        child: FilledButton(
+                          onPressed: _selectedIndex == null || _saving
                               ? null
-                              : () {
-                                  context.go('/student/home');
+                              : () async {
+                                  setState(() => _saving = true);
+                                  try {
+                                    await ref
+                                        .read(studentProfileRepositoryProvider)
+                                        .updateAvatarIndex(_selectedIndex);
+                                    if (!context.mounted) return;
+                                    context.go('/student/enroll');
+                                  } catch (e) {
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Could not save avatar: $e')),
+                                    );
+                                  } finally {
+                                    if (mounted) setState(() => _saving = false);
+                                  }
                                 },
-                          style: ElevatedButton.styleFrom(
+                          style: FilledButton.styleFrom(
                             backgroundColor: accent,
                             foregroundColor: Colors.white,
+                            disabledBackgroundColor: Colors.grey.shade300,
+                            disabledForegroundColor: Colors.grey.shade500,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(999),
                             ),
                           ),
-                          child: const Text(
-                            "LET'S GO!",
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.1,
-                            ),
-                          ),
+                          child: _saving
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Text(
+                                  "LET'S GO!",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1.1,
+                                  ),
+                                ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -117,7 +143,7 @@ class _SelectedAvatarPreview extends StatelessWidget {
       height: 120,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: accent.withOpacity(0.15),
+        color: accent.withAlpha(38),
         border: Border.all(color: accent, width: 3),
       ),
       child: CircleAvatar(

@@ -16,32 +16,33 @@ Legend:
 
 **Tasks**
 - [x] Bottom nav items wired to `/student/library`, `/student/home`, `/student/search`
-- [ ] Hamburger menu links to `/student/profile`, `/student/progress`, notifications placeholder
+- [x] Hamburger menu links to `/student/profile`, `/student/progress` (notifications can be added later if needed)
+- [x] Hamburger menu opened state: top section with avatar, name, level, and progress bar (placeholder; real progress/levels to be wired in H1–H3)
 - [x] Hook shell into `authControllerProvider` for logout and basic profile display (name, level, avatar)
-- [ ] Match visual style to app theming (colors/typography from theme system)
+- [x] Match student shell and navbar to design (KwentoVerse title, progress bar, badge placeholder, orange/cream theme)
 
 ---
 
-## 2. Student Home Page
+## 2. Student Home Page (My School)
 
 - **Route**: `/student/home`
 - **PRD routes**: Student home
 - **PRD epics**: C1–C3 (story library/details), D2–D3 (position/completion), H1–H3 (points/levels/badges)
 
-**Scope from you**
-- Welcome message
-- Continue reading
-- Recommended stories
-- Current level
-- Points summary
+**Scope (design-aligned)**
+- School card (school name, placeholder)
+- Educator section with horizontal list and "See More"
+- School Library search bar
+- Book grid (placeholder)
 
 **Tasks**
-- [ ] Show student name and greeting (from user profile)
-- [ ] “Continue reading” card pulling last `student_story_progress` (latest in-progress story)
-- [ ] “Recommended stories” list (initially: simple subset of library; later: smarter ranking)
-- [ ] Current level + next-level progress bar (using levels/badges model)
-- [ ] Points summary (total points and today/this week summary, if available)
-- [ ] Quick entry to library and progress screens
+- [x] School card with icon and placeholder school name (e.g. GSC SPED Integrated School)
+- [x] Educator section: "See More →" + horizontal scroll of educator avatars and names (placeholder)
+- [x] School Library heading + search bar (placeholder; non-functional for now)
+- [x] Book grid with cover placeholders and titles (placeholder data)
+- [ ] Wire school name from enrollment/school data
+- [ ] Wire educators from API; wire "See More" and search to real flows
+- [ ] Wire book grid to school-scoped stories
 
 ---
 
@@ -51,18 +52,34 @@ Legend:
 - **PRD routes**: Story Library
 - **PRD epics**: C1 (stories API + caching), C2 (library UI), C3 (story details)
 
-**Scope from you**
-- List of stories
-- Search bar
-- Filter (difficulty/category)
+**Scope (design-aligned)**
+- Home / Notifications segment; Home tab: Current readings (horizontal), Exercises (vertical + "See More"); Notifications tab: placeholder list (Today / Earlier)
 
 **Tasks**
+- [x] Home / Notifications segment control on Library route (orange/cream theme)
+- [x] Current readings: horizontal list of orange cards (cover placeholder, title, author, progress) with placeholder data
+- [x] Exercises: section with "See More →" and vertical list of same-style cards (placeholder data)
+- [x] Notifications tab: placeholder (Today / Earlier sections with sample notification items)
 - [ ] Fetch school-scoped stories (`stories` + `story_access` with `school_id`)
 - [ ] Implement paginated list with status chip (not started / in progress / completed)
 - [ ] Add search by title (local filter first; later server-backed)
 - [ ] Add optional filters (difficulty, category/tags)
 - [ ] Wire story tap → `/student/story/:id`
 - [ ] Cache story list for offline reopen (Hive/Isar or Supabase cache strategy)
+
+---
+
+## 3a. Student Search Page
+
+- **Route**: `/student/search`
+- **PRD routes**: Search (student)
+- **PRD epics**: C1–C2 (library/search)
+
+**Tasks**
+- [x] Search bar with placeholder "Search for books" (UI only; no backend yet)
+- [x] 2-column book grid with cover placeholders and titles (placeholder data)
+- [ ] Wire search to story API / local filter
+- [ ] Wire grid to real story list
 
 ---
 
@@ -232,9 +249,10 @@ Legend:
 - reading stats
 
 **Tasks**
-- [ ] Show avatar with ability to change (link to `/student/avatar-select`)
-- [ ] Display name and basic profile (grade, section if available)
-- [ ] Display associated school (`school_id`/name from schools table)
+- [x] Show avatar with ability to change (improved modal; persists to Supabase `profiles.avatar_index`)
+- [x] Fetch and display `userId` from Supabase auth (copy-to-clipboard)
+- [x] Display name from `profiles.full_name` (fallback to "Student")
+- [x] Display associated school name (via `profiles.school_id` → `schools`)
 - [ ] Light reading stats summary: total stories read, time read, average score
 - [ ] Entry points to account management (change password, etc. – can be deferred to separate flows)
 
@@ -259,7 +277,28 @@ Legend:
 
 ---
 
-## 13. Avatar Selection Page (Extra Onboarding)
+## 13. Enrollment Page (after avatar)
+
+- **Route**: `/student/enroll`
+- **PRD routes**: Not explicit; fits onboarding after avatar
+- **PRD epics**: B4 (school association), onboarding after avatar
+
+**Scope**
+- "You are not enrolled yet" / "My School" card
+- Search bar (no dropdown) and list of schools below
+- Select school from list; Enroll button enabled when selected
+- On Enroll: save enrollment (Supabase), show "Student is enrolled" modal, then redirect to `/student/home`
+
+**Tasks**
+- [x] Enrollment page: "You are not enrolled yet" / "My School" card
+- [x] Search bar (no dropdown) and list of schools below
+- [x] Select school from list; Enroll button enabled when selected
+- [x] On Enroll: save enrollment (Supabase), show "Student is enrolled" modal, then redirect to `/student/home`
+- [x] If already enrolled, redirect from `/student/enroll` to `/student/home`
+
+---
+
+## 14. Avatar Selection Page (Extra Onboarding)
 
 - **Route**: `/student/avatar-select`
 - **PRD routes**: Not explicit; fits onboarding/profile refinement
@@ -267,10 +306,10 @@ Legend:
 
 **Scope (current implementation)**
 - Avatar grid selection
-- “Let’s Go” button → `/student/home`
+- “Let’s Go” button → `/student/enroll`
 
 **Tasks**
-- [ ] Persist chosen avatar to student profile (Supabase `users` or profile table)
-- [ ] Use avatar in `StudentShell`/`StudentNavbar` and Profile page
+- [x] Persist chosen avatar to student profile (Supabase `profiles.avatar_index`)
+- [ ] Use avatar in `StudentShell`/`StudentNavbar` (Profile page already uses it)
 - [ ] Optionally gate first-time users: after login, redirect to avatar selection once
 

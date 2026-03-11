@@ -27,6 +27,7 @@ import '../../features/student/presentation/progress_page.dart';
 import '../../features/student/presentation/badges_page.dart';
 import '../../features/student/presentation/student_profile_page.dart';
 import '../../features/student/presentation/avatar_selection_page.dart';
+import '../../features/student/presentation/enrollment_page.dart';
 import '../../features/student/presentation/student_search_page.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -75,6 +76,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/student/avatar-select',
         builder: (context, state) => const AvatarSelectionPage(),
+      ),
+      GoRoute(
+        path: '/student/enroll',
+        builder: (context, state) => const EnrollmentPage(),
       ),
 
       ShellRoute(
