@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:ui';
 
+import '../../stories/data/downloaded_story_cache.dart';
 import '../../stories/data/story_providers.dart';
 import '../../stories/domain/story.dart';
 import '../../../shared/images/local_file_image.dart';
@@ -21,6 +22,7 @@ class _StoryDetailsPageState extends ConsumerState<StoryDetailsPage> {
   int _rating = 0;
   bool _isInLibrary = false;
   bool _ratingSubmitted = false;
+  bool _downloadedForOffline = false;
 
   void _onBack(BuildContext context) {
     final router = GoRouter.of(context);

@@ -13,7 +13,7 @@ class SupabaseStoryRepository {
     String? schoolId,
     String? query,
   }) async {
-    dynamic q = _client.from('stories').select('*').order('created_at', ascending: false);
+    dynamic q = _client.from('stories').select('*');
 
     if (schoolId != null && schoolId.isNotEmpty) {
       q = q.eq('school_id', schoolId);
@@ -23,6 +23,7 @@ class SupabaseStoryRepository {
       q = q.ilike('title', '%${query.trim()}%');
     }
 
+    q = q.order('created_at', ascending: false);
     final List<dynamic> rows = await q.timeout(_timeout);
     return rows
         .whereType<Map<String, dynamic>>()
@@ -119,6 +120,28 @@ class SupabaseStoryRepository {
       },
       onConflict: 'story_id,user_id',
     ).timeout(_timeout);
+  }
+
+  /// Stories the current user has rated (i.e. read and rated). Newest first.
+  Future<List<Story>> getStoriesReadByCurrentUser() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return const [];
+
+    final rows = await _client
+        .from('story_ratings')
+        .select('*, stories(*)')
+        .eq('user_id', userId)
+        .order('created_at', ascending: false)
+        .timeout(_timeout);
+
+    final list = <Story>[];
+    for (final raw in rows) {
+      final row = raw as Map<String, dynamic>?;
+      if (row == null) continue;
+      final storyMap = row['stories'] as Map<String, dynamic>?;
+      if (storyMap != null) list.add(_mapRowToStory(storyMap));
+    }
+    return list;
   }
 
   List<String> _segmentParagraphs(String text) {

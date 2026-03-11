@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../features/student/presentation/avatar_icons.dart';
+
 class HamburgerMenuOverlay extends StatelessWidget {
   const HamburgerMenuOverlay({
     super.key,
@@ -7,6 +9,7 @@ class HamburgerMenuOverlay extends StatelessWidget {
     this.displayName,
     this.levelLabel,
     this.avatarUrl,
+    this.avatarIndex,
     this.onClose,
     this.onProfile,
     this.onProgress,
@@ -17,6 +20,7 @@ class HamburgerMenuOverlay extends StatelessWidget {
   final String? displayName;
   final String? levelLabel;
   final String? avatarUrl;
+  final int? avatarIndex;
   final VoidCallback? onClose;
   final VoidCallback? onProfile;
   final VoidCallback? onProgress;
@@ -148,14 +152,13 @@ class HamburgerMenuOverlay extends StatelessWidget {
         backgroundColor: Colors.grey[200],
       );
     }
+    final icon = avatarIndex != null
+        ? avatarIconFor(avatarIndex!)
+        : Icons.person_rounded;
     return CircleAvatar(
       radius: 28,
       backgroundColor: Colors.grey[300],
-      child: Icon(
-        Icons.person,
-        size: 32,
-        color: Colors.grey[700],
-      ),
+      child: Icon(icon, size: 32, color: Colors.grey[700]),
     );
   }
 

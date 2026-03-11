@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../features/student/presentation/avatar_icons.dart';
 import '../features/student/presentation/student_theme.dart';
 
 class StudentNavbar extends StatelessWidget implements PreferredSizeWidget {
@@ -8,12 +9,14 @@ class StudentNavbar extends StatelessWidget implements PreferredSizeWidget {
     required this.displayName,
     required this.levelLabel,
     this.avatarUrl,
+    this.avatarIndex,
     this.onMenuTap,
   });
 
   final String displayName;
   final String levelLabel;
   final String? avatarUrl;
+  final int? avatarIndex;
   final VoidCallback? onMenuTap;
 
   @override
@@ -92,15 +95,13 @@ class StudentNavbar extends StatelessWidget implements PreferredSizeWidget {
         backgroundColor: StudentTheme.cardLightOrange,
       );
     }
-
+    final icon = avatarIndex != null
+        ? avatarIconFor(avatarIndex!)
+        : Icons.person_rounded;
     return CircleAvatar(
       radius: 16,
       backgroundColor: StudentTheme.cardLightOrange,
-      child: Icon(
-        Icons.person_rounded,
-        size: 18,
-        color: StudentTheme.primaryOrange,
-      ),
+      child: Icon(icon, size: 18, color: StudentTheme.primaryOrange),
     );
   }
 }

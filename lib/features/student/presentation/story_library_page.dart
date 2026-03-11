@@ -18,9 +18,7 @@ class _StoryLibraryPageState extends ConsumerState<StoryLibraryPage> {
 
   @override
   Widget build(BuildContext context) {
-    // For now we load all stories; when StudentProfile exposes schoolId we can
-    // scope this with storiesForSchoolProvider(schoolId).
-    final storiesAsync = ref.watch(storiesForSchoolProvider(null));
+    final storiesAsync = ref.watch(currentUserSchoolStoriesProvider);
 
     return storiesAsync.when(
       loading: () => const Center(
@@ -51,14 +49,14 @@ class _StoryLibraryPageState extends ConsumerState<StoryLibraryPage> {
               ]
             : const <_ReadingItem>[];
 
+        // Exercises = all stories from Supabase (school-scoped); each has a quiz.
         final exercises = myLibrary
-            .take(2)
             .map(
               (s) => _ReadingItem(
                 storyId: s.id,
                 title: s.title,
                 author: s.author,
-                progress: '0/15 answered',
+                progress: 'Quiz',
               ),
             )
             .toList(growable: false);
@@ -186,7 +184,7 @@ class _StoryLibraryPageState extends ConsumerState<StoryLibraryPage> {
                       title: item.title,
                       author: item.author,
                       progress: item.progress,
-                      onTap: () => context.go('/student/evaluation/${item.storyId}/activity'),
+                      onTap: () => context.go('/student/evaluation/${item.storyId}/combined'),
                     ),
                   ),
                 ),

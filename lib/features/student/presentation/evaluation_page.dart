@@ -21,12 +21,7 @@ class EvaluationPage extends StatelessWidget {
 }
 
 /// Supported evaluation types aligned with DepEd's 5A stages.
-enum EvaluationStage {
-  activity,
-  abstraction,
-  application,
-  assessment,
-}
+enum EvaluationStage { activity, abstraction, application, assessment }
 
 EvaluationStage parseEvaluationStage(String raw) {
   switch (raw.toLowerCase()) {
@@ -54,6 +49,13 @@ String stageTitle(EvaluationStage stage) {
     case EvaluationStage.assessment:
       return 'Assessment';
   }
+}
+
+class _StagedQuestion {
+  const _StagedQuestion({required this.stage, required this.question});
+
+  final EvaluationStage stage;
+  final EvaluationQuestion question;
 }
 
 /// Simple MCQ model for local/sample questions.
@@ -211,6 +213,24 @@ List<EvaluationQuestion> _questionsFor(String storyId, EvaluationStage stage) {
   ];
 }
 
+List<_StagedQuestion> _buildCombinedQuestions(String storyId) {
+  const orderedStages = [
+    EvaluationStage.activity,
+    EvaluationStage.abstraction,
+    EvaluationStage.application,
+    EvaluationStage.assessment,
+  ];
+
+  final out = <_StagedQuestion>[];
+  for (final stage in orderedStages) {
+    final questions = _questionsFor(storyId, stage);
+    for (final q in questions) {
+      out.add(_StagedQuestion(stage: stage, question: q));
+    }
+  }
+  return out;
+}
+
 class _EvaluationPageScaffold extends StatefulWidget {
   const _EvaluationPageScaffold({
     required this.storyId,
@@ -225,22 +245,28 @@ class _EvaluationPageScaffold extends StatefulWidget {
 }
 
 class _EvaluationPageScaffoldState extends State<_EvaluationPageScaffold> {
+  late final bool _isCombined = widget.type.toLowerCase() == 'combined';
   late final EvaluationStage _stage = parseEvaluationStage(widget.type);
-  late final List<EvaluationQuestion> _questions = _questionsFor(widget.storyId, _stage);
+  late final List<_StagedQuestion> _questions = _isCombined
+      ? _buildCombinedQuestions(widget.storyId)
+      : _questionsFor(widget.storyId, _stage)
+          .map((q) => _StagedQuestion(stage: _stage, question: q))
+          .toList();
 
   int _currentIndex = 0;
   final Map<String, int> _answers = {}; // questionId -> selectedIndex
 
-  EvaluationQuestion get _currentQuestion => _questions[_currentIndex];
+  _StagedQuestion get _currentQuestion => _questions[_currentIndex];
+  EvaluationQuestion get _currentEvalQuestion => _currentQuestion.question;
 
   void _onSelectOption(int index) {
     setState(() {
-      _answers[_currentQuestion.id] = index;
+      _answers[_currentEvalQuestion.id] = index;
     });
   }
 
   void _onNextOrSubmit() {
-    final hasAnswer = _answers.containsKey(_currentQuestion.id);
+    final hasAnswer = _answers.containsKey(_currentEvalQuestion.id);
     if (!hasAnswer) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -260,7 +286,8 @@ class _EvaluationPageScaffoldState extends State<_EvaluationPageScaffold> {
     }
 
     // Submit and navigate to result.
-    final correctCount = _questions.where((q) {
+    final correctCount = _questions.where((sq) {
+      final q = sq.question;
       final selected = _answers[q.id];
       return selected != null && selected == q.correctIndex;
     }).length;
@@ -286,7 +313,8 @@ class _EvaluationPageScaffoldState extends State<_EvaluationPageScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    final question = _currentQuestion;
+    final stagedQuestion = _currentQuestion;
+    final question = stagedQuestion.question;
     final selectedIndex = _answers[question.id];
     final isLast = _currentIndex == _questions.length - 1;
 
@@ -300,7 +328,7 @@ class _EvaluationPageScaffoldState extends State<_EvaluationPageScaffold> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _EvaluationHeader(
-                  title: stageTitle(_stage),
+                  title: _isCombined ? 'Story Quiz' : stageTitle(_stage),
                   onBack: () {
                     final router = GoRouter.of(context);
                     if (router.canPop()) {
@@ -326,14 +354,29 @@ class _EvaluationPageScaffoldState extends State<_EvaluationPageScaffold> {
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 8),
+                        if (_isCombined)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Text(
+                              stageTitle(stagedQuestion.stage),
+                              style: StudentTheme.caption.copyWith(
+                                fontSize: 11,
+                                color: StudentTheme.secondaryGray,
+                              ),
+                            ),
+                          ),
                         Text(
                           question.prompt,
-                          style: StudentTheme.sectionHeaderSecondary.copyWith(fontSize: 16),
+                          style: StudentTheme.sectionHeaderSecondary.copyWith(
+                            fontSize: 16,
+                            color: Colors.black,
+                            fontWeight: FontWeight.w500,
+                          ),
                           textAlign: TextAlign.left,
                         ),
                         const SizedBox(height: 18),
                         ...List.generate(question.options.length, (i) {
-                          final optionLabel = String.fromCharCode('A'.codeUnitAt(0) + i);
+                          final optionLabel = String.fromCharCode('a'.codeUnitAt(0) + i);
                           final isSelected = selectedIndex == i;
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 10),
@@ -395,18 +438,25 @@ class _EvaluationHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 4, 16, 0),
+      padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
       child: Row(
         children: [
           IconButton(
             onPressed: onBack,
-            icon: const Icon(Icons.arrow_back_rounded),
+            icon: const Icon(Icons.arrow_back_rounded, color: Colors.black),
           ),
-          const SizedBox(width: 4),
-          Text(
-            title,
-            style: StudentTheme.sectionHeader.copyWith(fontSize: 18),
+          Expanded(
+            child: Text(
+              title,
+              style: StudentTheme.sectionHeader.copyWith(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.black,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
+          const SizedBox(width: 48),
         ],
       ),
     );
@@ -602,7 +652,8 @@ class EvaluationResultPage extends StatelessWidget {
                     const SizedBox(height: 12),
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context).popUntil((route) => route.isFirst);
+                        Navigator.of(context).pop(); // dismiss result page
+                        GoRouter.of(context).go('/student/home');
                       },
                       child: const Text('Back to Home'),
                     ),

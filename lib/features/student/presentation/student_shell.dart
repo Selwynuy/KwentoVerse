@@ -51,6 +51,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
     final profile = ref.watch(myStudentProfileProvider);
     final displayName = profile.maybeWhen(data: (p) => p.fullName, orElse: () => 'Student');
     final levelLabel = ref.watch(studentLevelLabelProvider);
+    final avatarIndex = profile.maybeWhen(data: (p) => p.avatarIndex, orElse: () => null);
 
     return Stack(
       children: [
@@ -59,6 +60,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
             displayName: displayName,
             levelLabel: levelLabel,
             avatarUrl: null,
+            avatarIndex: avatarIndex,
             onMenuTap: _toggleMenu,
           ),
           body: widget.child,
@@ -79,6 +81,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
           displayName: displayName,
           levelLabel: levelLabel,
           avatarUrl: null,
+          avatarIndex: avatarIndex,
           onClose: _closeMenu,
           onProfile: () => context.push('/student/profile'),
           onProgress: () => context.push('/student/progress'),

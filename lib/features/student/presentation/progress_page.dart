@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../stories/data/story_providers.dart';
+import '../../stories/domain/story.dart';
 import '../data/student_profile_providers.dart';
 import '../data/student_profile_repository.dart';
+import 'avatar_icons.dart';
 import 'student_theme.dart';
 
 class ProgressPage extends ConsumerWidget {
@@ -11,19 +14,27 @@ class ProgressPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return _ProgressOverviewPage(profileAsync: ref.watch(myStudentProfileProvider));
+    final profileAsync = ref.watch(myStudentProfileProvider);
+    final readStoriesAsync = ref.watch(myReadStoriesProvider);
+    return _ProgressOverviewPage(
+      profileAsync: profileAsync,
+      readStoriesAsync: readStoriesAsync,
+    );
   }
 }
 
 class _ProgressOverviewPage extends StatelessWidget {
-  const _ProgressOverviewPage({required this.profileAsync});
+  const _ProgressOverviewPage({
+    required this.profileAsync,
+    required this.readStoriesAsync,
+  });
 
   final AsyncValue<StudentProfile> profileAsync;
+  final AsyncValue<List<Story>> readStoriesAsync;
 
   @override
   Widget build(BuildContext context) {
     final student = _demoStudentProgress;
-    final books = _demoBooks;
     final displayName = profileAsync.maybeWhen(
       data: (p) => p.fullName,
       orElse: () => 'Student',
@@ -63,6 +74,7 @@ class _ProgressOverviewPage extends StatelessWidget {
                     radius: 58,
                     color: StudentTheme.cardLightOrange,
                     iconColor: StudentTheme.primaryOrange,
+                    avatarIndex: profileAsync.maybeWhen(data: (p) => p.avatarIndex, orElse: () => null),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -105,7 +117,11 @@ class _ProgressOverviewPage extends StatelessWidget {
                 const SizedBox(height: 14),
                 _SectionCard(
                   title: "Books I've read so far!",
-                  child: _BookRow(books: books),
+                  child: readStoriesAsync.when(
+                    data: (stories) => _BookRow(stories: stories),
+                    loading: () => const _BooksLoading(),
+                    error: (_, __) => const _BooksError(),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -374,18 +390,29 @@ class _BadgeCard extends StatelessWidget {
 }
 
 class _BookRow extends StatelessWidget {
-  const _BookRow({required this.books});
+  const _BookRow({required this.stories});
 
-  final List<_BookProgress> books;
+  final List<Story> stories;
 
   @override
   Widget build(BuildContext context) {
+    if (stories.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Text(
+          'Finish and rate a story to see it here.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: StudentTheme.titleDark.withValues(alpha: 0.7),
+              ),
+        ),
+      );
+    }
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          for (final b in books) ...[
-            _BookCard(book: b),
+          for (final story in stories) ...[
+            _BookCard(story: story),
             const SizedBox(width: 12),
           ],
         ],
@@ -395,36 +422,69 @@ class _BookRow extends StatelessWidget {
 }
 
 class _BookCard extends StatelessWidget {
-  const _BookCard({required this.book});
+  const _BookCard({required this.story});
 
-  final _BookProgress book;
+  final Story story;
 
   @override
   Widget build(BuildContext context) {
     final inner = const Color(0xFFFFB862);
-    return Container(
-      width: 160,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: inner,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 86, child: BookCoverPlaceholder(useConstraints: true)),
-          const SizedBox(height: 8),
-          Text(
-            book.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 12.5,
-              color: StudentTheme.titleDark,
+    return InkWell(
+      onTap: () => context.push('/student/story/${story.id}'),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 160,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: inner,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 86, child: BookCoverPlaceholder(useConstraints: true)),
+            const SizedBox(height: 8),
+            Text(
+              story.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 12.5,
+                color: StudentTheme.titleDark,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BooksLoading extends StatelessWidget {
+  const _BooksLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 12),
+      child: Center(child: SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2))),
+    );
+  }
+}
+
+class _BooksError extends StatelessWidget {
+  const _BooksError();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Text(
+        'Could not load your reads.',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Colors.red.shade700,
+            ),
       ),
     );
   }
@@ -572,18 +632,23 @@ class _AvatarCircle extends StatelessWidget {
     required this.radius,
     required this.color,
     required this.iconColor,
+    this.avatarIndex,
   });
 
   final double radius;
   final Color color;
   final Color iconColor;
+  final int? avatarIndex;
 
   @override
   Widget build(BuildContext context) {
+    final icon = avatarIndex != null
+        ? avatarIconFor(avatarIndex!)
+        : Icons.person_rounded;
     return CircleAvatar(
       radius: radius,
       backgroundColor: color,
-      child: Icon(Icons.person_rounded, size: radius * 0.9, color: iconColor),
+      child: Icon(icon, size: radius * 0.9, color: iconColor),
     );
   }
 }
@@ -626,12 +691,6 @@ class _LevelProgress {
   final double progress;
   final String subtitle;
   final bool completed;
-}
-
-class _BookProgress {
-  const _BookProgress({required this.title});
-
-  final String title;
 }
 
 const _demoStudentProgress = _StudentProgress(
@@ -681,9 +740,3 @@ const _demoStudentProgress = _StudentProgress(
     ),
   ],
 );
-
-const _demoBooks = <_BookProgress>[
-  _BookProgress(title: "It's Not Hansel and Gretel"),
-  _BookProgress(title: 'Tonya and Her Perfect Tea'),
-];
-

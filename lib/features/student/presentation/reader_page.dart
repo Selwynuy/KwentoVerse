@@ -226,9 +226,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
                           ),
                         ),
                         onPressed: () => GoRouter.of(context)
-                            .go('/student/evaluation/${widget.storyId}/activity'),
+                            .go('/student/evaluation/${widget.storyId}/combined'),
                         child: const Text(
-                          'Story Activities',
+                          'Start Quiz',
                           style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
