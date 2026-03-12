@@ -33,10 +33,19 @@ class QuizResultRepository {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return const [];
 
+    return getLatestQuizResultsWithStoriesForUser(userId);
+  }
+
+  /// Latest quiz result per story for an arbitrary user (educator view).
+  Future<List<QuizResultWithStory>> getLatestQuizResultsWithStoriesForUser(
+    String userId,
+  ) async {
     try {
       final PostgrestList raw = await _client
           .from('quiz_results')
-          .select('story_id, total_correct, total_questions, stage_scores, attempted_at')
+          .select(
+            'story_id, total_correct, total_questions, stage_scores, attempted_at',
+          )
           .eq('user_id', userId)
           .order('attempted_at', ascending: false)
           .timeout(_timeout);

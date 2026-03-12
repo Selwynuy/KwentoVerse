@@ -37,11 +37,21 @@ class AuthRepository {
     final user = response.user;
     if (user == null) return null;
 
-    await _client.from('profiles').upsert({
-      'id': user.id,
-      'full_name': fullName,
-      'role': _roleToString(role),
-    });
+    // Best-effort profile setup. If RLS blocks this (e.g. missing policy),
+    // let the auth account still be created and usable.
+    try {
+      await _client.from('profiles').upsert({
+        'id': user.id,
+        'full_name': fullName,
+        'role': _roleToString(role),
+      });
+    } on PostgrestException catch (e) {
+      // 42501 = insufficient_privilege in Postgres.
+      // MapAuthErrorToFriendlyMessage already handles this for callers,
+      // but we don't want educator signup to fully fail just because
+      // the profile row couldn't be written yet.
+      if (e.code != '42501') rethrow;
+    }
 
     return _loadRole(user.id);
   }

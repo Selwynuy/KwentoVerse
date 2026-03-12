@@ -170,11 +170,18 @@ class _AuthLoginFormState extends ConsumerState<AuthLoginForm> {
       return;
     }
 
-    if (auth.isAuthenticated && auth.role == UserRole.student) {
+    if (!auth.isAuthenticated || auth.role == null) return;
+
+    if (auth.role == UserRole.student) {
       // For now, always send logged-in students to avatar selection.
       // Later this can be gated by a "hasAvatar" flag on the user profile.
       context.go('/student/avatar-select');
+      return;
     }
+
+    // For non-student roles, let the global router redirect
+    // the user to the correct shell based on their role.
+    context.go('/');
   }
 }
 

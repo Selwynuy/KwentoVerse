@@ -18,24 +18,30 @@ class ProgressPage extends ConsumerWidget {
     final profileAsync = ref.watch(myStudentProfileProvider);
     final readStoriesAsync = ref.watch(myReadStoriesProvider);
     final quizScoresAsync = ref.watch(myQuizScoresWithStoriesProvider);
-    return _ProgressOverviewPage(
+    return ProgressOverviewPage(
       profileAsync: profileAsync,
       readStoriesAsync: readStoriesAsync,
       quizScoresAsync: quizScoresAsync,
+      showShareButton: true,
+      overrideBackDestination: null,
     );
   }
 }
 
-class _ProgressOverviewPage extends StatelessWidget {
-  const _ProgressOverviewPage({
+class ProgressOverviewPage extends StatelessWidget {
+  const ProgressOverviewPage({
     required this.profileAsync,
     required this.readStoriesAsync,
     required this.quizScoresAsync,
+    required this.showShareButton,
+    required this.overrideBackDestination,
   });
 
   final AsyncValue<StudentProfile> profileAsync;
   final AsyncValue<List<Story>> readStoriesAsync;
   final AsyncValue<List<QuizResultWithStory>> quizScoresAsync;
+  final bool showShareButton;
+  final VoidCallback? overrideBackDestination;
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +78,9 @@ class _ProgressOverviewPage extends StatelessWidget {
                   children: [
                     IconButton(
                       onPressed: () {
-                        if (GoRouter.of(context).canPop()) {
+                        if (overrideBackDestination != null) {
+                          overrideBackDestination!();
+                        } else if (GoRouter.of(context).canPop()) {
                           context.pop();
                         } else {
                           context.go('/student/home');
@@ -179,23 +187,27 @@ class _ProgressOverviewPage extends StatelessWidget {
                     error: (error, stackTrace) => const _BooksError(),
                   ),
                 ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 50,
-                  child: FilledButton(
-                    onPressed: () => _openShareSheet(context),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: StudentTheme.primaryOrange,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text(
-                      'Share Progress',
-                      style: TextStyle(fontWeight: FontWeight.w800),
+                if (showShareButton) ...[
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 50,
+                    child: FilledButton(
+                      onPressed: () => _openShareSheet(context),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: StudentTheme.primaryOrange,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'Share Progress',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ),

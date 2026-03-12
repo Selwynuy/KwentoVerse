@@ -14,6 +14,8 @@ class HamburgerMenuOverlay extends StatelessWidget {
     this.onProfile,
     this.onProgress,
     this.onLogout,
+    this.progressLabel = 'Progress',
+    this.progressIcon,
   });
 
   final bool isOpen;
@@ -25,6 +27,8 @@ class HamburgerMenuOverlay extends StatelessWidget {
   final VoidCallback? onProfile;
   final VoidCallback? onProgress;
   final VoidCallback? onLogout;
+  final String progressLabel;
+  final IconData? progressIcon;
 
   static const _progressBarOrange = Color(0xFFFF9500);
 
@@ -77,14 +81,15 @@ class HamburgerMenuOverlay extends StatelessWidget {
                               onClose?.call();
                             },
                           ),
-                          _MenuItem(
-                            icon: Icons.trending_up_rounded,
-                            label: 'Progress',
-                            onTap: () {
-                              onProgress?.call();
-                              onClose?.call();
-                            },
-                          ),
+                          if (onProgress != null)
+                            _MenuItem(
+                              icon: progressIcon ?? Icons.trending_up_rounded,
+                              label: progressLabel,
+                              onTap: () {
+                                onProgress?.call();
+                                onClose?.call();
+                              },
+                            ),
                           const Spacer(),
                           _MenuItem(
                             icon: Icons.logout_rounded,
@@ -186,7 +191,7 @@ class HamburgerMenuOverlay extends StatelessWidget {
                           borderRadius: BorderRadius.circular(5),
                         ),
                       ),
-                      FractionallySizedBox(
+                      SizedBox(
                         width: barWidth * progressFraction,
                         child: Container(
                           height: 10,
@@ -217,22 +222,6 @@ class HamburgerMenuOverlay extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-class FractionallySizedBox extends StatelessWidget {
-  const FractionallySizedBox({
-    super.key,
-    required this.width,
-    required this.child,
-  });
-
-  final double width;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(width: width, child: child);
   }
 }
 

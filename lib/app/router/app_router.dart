@@ -14,7 +14,13 @@ import '../../features/admin/presentation/admin_shell.dart';
 import '../../features/admin/presentation/manage_educators_page.dart';
 import '../../features/admin/presentation/school_settings_page.dart';
 import '../../features/educator/presentation/educator_shell.dart';
-import '../../features/educator/presentation/educator_dashboard_page.dart';
+import '../../features/educator/presentation/educator_home_page.dart';
+import '../../features/educator/presentation/educator_library_page.dart';
+import '../../features/educator/presentation/educator_search_page.dart';
+import '../../features/educator/presentation/school_settings_page.dart'
+    as educator_school;
+import '../../features/educator/presentation/story_readers_page.dart';
+import '../../features/educator/presentation/student_progress_view.dart';
 import '../../features/educator/presentation/educator_profile_page.dart';
 import '../../features/educator/presentation/story_analytics_page.dart';
 import '../../features/educator/presentation/story_management_page.dart';
@@ -54,7 +60,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 
       // When logged in, don't stay on public entry routes.
       if (isLoggedIn &&
-          (path == '/' || path == '/login' || path == '/register' || path == '/onboarding')) {
+          (path == '/' ||
+              path == '/login' ||
+              path == '/login-educator' ||
+              path == '/register' ||
+              path == '/register-educator' ||
+              path == '/onboarding')) {
         return _homeFor(role ?? UserRole.student);
       }
 
@@ -123,15 +134,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         builder: (context, state, child) => EducatorShell(child: child),
         routes: [
-          GoRoute(path: '/educator/home', builder: (context, state) => const EducatorDashboardPage()),
-          GoRoute(path: '/educator/stories', builder: (context, state) => const StoryManagementPage()),
           GoRoute(
-            path: '/educator/stories/new',
-            builder: (context, state) => const StoryManagementPage(createMode: true),
+            path: '/educator/home',
+            builder: (context, state) => const EducatorHomePage(),
           ),
           GoRoute(
-            path: '/educator/stories/:id',
-            builder: (context, state) => StoryManagementPage(storyId: state.pathParameters['id']!),
+            path: '/educator/library',
+            builder: (context, state) => const EducatorLibraryPage(),
+          ),
+          GoRoute(
+            path: '/educator/search',
+            builder: (context, state) => const EducatorSearchPage(),
+          ),
+          GoRoute(
+            path: '/educator/school',
+            builder: (context, state) =>
+                const educator_school.EducatorSchoolSettingsPage(),
           ),
           GoRoute(
             path: '/educator/analytics/:id',
@@ -139,6 +157,42 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(path: '/educator/profile', builder: (context, state) => const EducatorProfilePage()),
         ],
+      ),
+
+      GoRoute(
+        path: '/educator/stories',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const StoryManagementPage(),
+      ),
+      GoRoute(
+        path: '/educator/stories/new',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const StoryManagementPage(createMode: true),
+      ),
+      GoRoute(
+        path: '/educator/stories/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => StoryManagementPage(storyId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/educator/story/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            StoryDetailsPage(storyId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/educator/story-readers/:storyId',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => StoryReadersPage(
+          storyId: state.pathParameters['storyId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/educator/student/:userId/progress',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => StudentProgressView(
+          studentId: state.pathParameters['userId']!,
+        ),
       ),
 
       ShellRoute(

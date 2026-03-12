@@ -4,50 +4,100 @@ import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/kwento_bottom_nav_bar.dart';
 import '../../auth/application/auth_state.dart';
+import '../data/educator_profile_providers.dart';
+import '../../../widgets/educator_navbar.dart';
+import '../../../widgets/hamburger_menu_overlay.dart';
 
-class EducatorShell extends ConsumerWidget {
+class EducatorShell extends ConsumerStatefulWidget {
   const EducatorShell({super.key, required this.child});
 
   final Widget child;
 
   static const _tabs = [
-    ('Library', '/educator/stories', Icons.library_books_rounded),
+    ('Library', '/educator/library', Icons.library_books_rounded),
     ('My School', '/educator/home', Icons.groups_rounded),
-    ('Search', '/educator/stories', Icons.search_rounded),
+    ('Search', '/educator/search', Icons.search_rounded),
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EducatorShell> createState() => _EducatorShellState();
+}
+
+class _EducatorShellState extends ConsumerState<EducatorShell> {
+  bool _isMenuOpen = false;
+
+  void _toggleMenu() {
+    setState(() {
+      _isMenuOpen = !_isMenuOpen;
+    });
+  }
+
+  void _closeMenu() {
+    setState(() {
+      _isMenuOpen = false;
+    });
+  }
+
+  Future<void> _handleLogout() async {
+    await ref.read(authControllerProvider.notifier).logout();
+    if (mounted) context.go('/login');
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
-    final idx = _tabs.indexWhere((t) => location.startsWith(t.$2));
+    final idx =
+        EducatorShell._tabs.indexWhere((t) => location.startsWith(t.$2));
     final currentIndex = idx < 0 ? 0 : idx;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Educator'),
-        actions: [
-          IconButton(
-            tooltip: 'Logout',
-            onPressed: () async {
-              await ref.read(authControllerProvider.notifier).logout();
-              if (context.mounted) context.go('/login');
-            },
-            icon: const Icon(Icons.logout),
+    final profile = ref.watch(myEducatorProfileProvider);
+    final displayName = profile.maybeWhen(
+      data: (p) => p.fullName,
+      orElse: () => 'Educator',
+    );
+    final avatarIndex = profile.maybeWhen(
+      data: (p) => p.avatarIndex,
+      orElse: () => null,
+    );
+    const levelLabel = 'Educator';
+
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: EducatorNavbar(
+            displayName: displayName,
+            levelLabel: levelLabel,
+            avatarUrl: null,
+            avatarIndex: avatarIndex,
+            onMenuTap: _toggleMenu,
           ),
-        ],
-      ),
-      body: child,
-      bottomNavigationBar: KwentoBottomNavBar(
-        currentIndex: currentIndex,
-        items: [
-          for (final t in _tabs)
-            KwentoBottomNavBarItem(
-              icon: t.$3,
-              label: t.$1,
-              onTap: () => context.go(t.$2),
-            ),
-        ],
-      ),
+          body: widget.child,
+          bottomNavigationBar: KwentoBottomNavBar(
+            currentIndex: currentIndex,
+            items: [
+              for (final t in EducatorShell._tabs)
+                KwentoBottomNavBarItem(
+                  icon: t.$3,
+                  label: t.$1,
+                  onTap: () => context.go(t.$2),
+                ),
+            ],
+          ),
+        ),
+        HamburgerMenuOverlay(
+          isOpen: _isMenuOpen,
+          displayName: displayName,
+          levelLabel: levelLabel,
+          avatarUrl: null,
+          avatarIndex: avatarIndex,
+          onClose: _closeMenu,
+          onProfile: () => context.push('/educator/profile'),
+          onProgress: () => context.push('/educator/school'),
+          progressLabel: 'School Settings',
+          progressIcon: Icons.settings_rounded,
+          onLogout: _handleLogout,
+        ),
+      ],
     );
   }
 }

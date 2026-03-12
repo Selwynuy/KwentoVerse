@@ -103,48 +103,76 @@ class _StoryDetailsPageState extends ConsumerState<StoryDetailsPage> {
                             const SizedBox(height: 12),
                             SizedBox(
                               width: double.infinity,
-                              child: _PillButton(
-                                label: 'Read',
-                                icon: Icons.menu_book_rounded,
-                                filled: true,
-                                onTap: () => context.go('/student/reader/${story.id}'),
-                                height: 44,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: _PillButton(
+                                      label: 'Read',
+                                      icon: Icons.menu_book_rounded,
+                                      filled: true,
+                                      onTap: () => context.go(
+                                        '/student/reader/${story.id}',
+                                      ),
+                                      height: 44,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Builder(
+                                      builder: (context) {
+                                        final isAvailableOffline =
+                                            DownloadedStoryCache.instance.has(
+                                          story.id,
+                                        );
+                                        final label = isAvailableOffline
+                                            ? 'Added'
+                                            : 'Add';
+                                        final icon = isAvailableOffline
+                                            ? Icons.offline_pin_rounded
+                                            : Icons.download_rounded;
+                                        return _PillButton(
+                                          label: label,
+                                          icon: icon,
+                                          filled: false,
+                                          onTap: isAvailableOffline
+                                              ? () {}
+                                              : () async {
+                                                  // Download story + questions together.
+                                                  final questions =
+                                                      await ref.read(
+                                                    quizQuestionsProvider(
+                                                      story.id,
+                                                    ).future,
+                                                  );
+                                                  await DownloadedStoryCache
+                                                      .instance
+                                                      .put(
+                                                    story,
+                                                    questions: questions,
+                                                  );
+                                                  setState(() {});
+                                                  if (context.mounted) {
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text(
+                                                          'Downloaded. You can read this book offline.',
+                                                        ),
+                                                        duration: Duration(
+                                                          seconds: 2,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                },
+                                          height: 44,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            Builder(
-                              builder: (context) {
-                                final isAvailableOffline = DownloadedStoryCache.instance.has(story.id);
-                                return _PillButton(
-                                  label: isAvailableOffline
-                                      ? 'Available offline'
-                                      : 'Download for offline',
-                                  icon: isAvailableOffline
-                                      ? Icons.offline_pin_rounded
-                                      : Icons.download_rounded,
-                                  filled: false,
-                                  onTap: isAvailableOffline
-                                      ? () {}
-                                      : () async {
-                                          // Download story + questions together.
-                                          final questions = await ref.read(
-                                              quizQuestionsProvider(story.id).future);
-                                          await DownloadedStoryCache.instance
-                                              .put(story, questions: questions);
-                                          setState(() {});
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                    'Downloaded. You can read this book offline.'),
-                                                duration: Duration(seconds: 2),
-                                              ),
-                                            );
-                                          }
-                                        },
-                                  height: 44,
-                                );
-                              },
                             ),
                             const SizedBox(height: 14),
                             Text('Description', style: StudentTheme.sectionHeader),
