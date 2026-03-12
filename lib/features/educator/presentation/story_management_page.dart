@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -51,6 +52,8 @@ class _StoryManagementPageState extends ConsumerState<StoryManagementPage> {
   double _coverUploadProgress = 0;
   bool _coverUploading = false;
   String? _coverStoragePath;
+
+  Uint8List? _coverPreviewBytes;
 
   bool _submitting = false;
 
@@ -136,6 +139,7 @@ class _StoryManagementPageState extends ConsumerState<StoryManagementPage> {
     final ext = fileName.split('.').last.toLowerCase();
 
     setState(() {
+      _coverPreviewBytes = bytes;
       _coverFileName = fileName;
       _coverUploading = true;
       _coverUploadProgress = 0;
@@ -267,7 +271,10 @@ class _StoryManagementPageState extends ConsumerState<StoryManagementPage> {
     );
     if (answer == null) return;
     setState(() => _isCopyrighted = answer);
-    if (answer) await _showDisclaimerDialog();
+    if (answer) {
+      await _showDisclaimerDialog();
+      await _showAddCopyrightLicenseDialog();
+    }
   }
 
   Future<void> _showDisclaimerDialog() async {
@@ -447,57 +454,63 @@ class _StoryManagementPageState extends ConsumerState<StoryManagementPage> {
             ),
             const SizedBox(height: 8),
 
-            // ── Upload buttons row ───────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: _UploadButton(
-                    icon: Icons.upload_file_rounded,
-                    label: 'Upload Story',
-                    uploading: _storyUploading,
-                    done: _storyStoragePath != null,
-                    onTap: _storyUploading ? null : _pickAndUploadStory,
+            // ── Story File + Cover card ──────────────────────────────
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: StudentTheme.cardLightOrange),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: const [
+                      Icon(Icons.menu_book_rounded, size: 16, color: StudentTheme.titleDark),
+                      SizedBox(width: 6),
+                      Text(
+                        'Story File',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: StudentTheme.titleDark,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _UploadButton(
-                    icon: Icons.image_rounded,
-                    label: 'Upload Story Cover',
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _UploadButton(
+                          icon: Icons.upload_file_rounded,
+                          label: 'Upload Story',
+                          uploading: _storyUploading,
+                          done: _storyStoragePath != null,
+                          onTap: _storyUploading ? null : _pickAndUploadStory,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _UploadButton(
+                          icon: Icons.image_rounded,
+                          label: 'Upload Story Cover',
+                          uploading: _coverUploading,
+                          done: _coverStoragePath != null,
+                          onTap: _coverUploading ? null : _pickAndUploadCover,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _CoverPreview(
+                    bytes: _coverPreviewBytes,
                     uploading: _coverUploading,
                     done: _coverStoragePath != null,
-                    onTap: _coverUploading ? null : _pickAndUploadCover,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // ── Progress bars ────────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: _ProgressBar(
-                    label: _storyFileName != null
-                        ? _storyFileName!
-                        : '(0/1)',
-                    fraction: _storyStoragePath != null
-                        ? 1
-                        : (_storyUploading ? _storyUploadProgress : 0),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _ProgressBar(
-                    label: _coverFileName != null
-                        ? _coverFileName!
-                        : '(0mb/3mb)',
-                    fraction: _coverStoragePath != null
-                        ? 1
-                        : (_coverUploading ? _coverUploadProgress : 0),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -597,39 +610,26 @@ class _StoryManagementPageState extends ConsumerState<StoryManagementPage> {
               label: '+ Add Author Name',
               onTap: _showAddAuthorDialog,
             ),
-            const SizedBox(height: 8),
-
-            // Copyright licenses
-            if (_isCopyrighted == true) ...[
-              ...List.generate(
-                _copyrightLicenses.length,
-                (i) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: _Chip(
-                    label: _copyrightLicenses[i],
-                    icon: Icons.gavel_rounded,
-                    onRemove: () =>
-                        setState(() => _copyrightLicenses.removeAt(i)),
-                  ),
-                ),
+            const SizedBox(height: 6),
+            const Text(
+              'Copyright',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: StudentTheme.secondaryGray,
               ),
-              _AddItemButton(
-                label: '+ Add Copyright License',
-                onTap: _showAddCopyrightLicenseDialog,
-              ),
-              const SizedBox(height: 8),
-            ],
-
+            ),
+            const SizedBox(height: 4),
+            // Copyright block
             if (_isCopyrighted == null)
               _AddItemButton(
-                label: '+ Is this story copyrighted?',
+                label: 'Is this story copyrighted?',
                 onTap: _showCopyrightDialog,
-              ),
-
-            if (_isCopyrighted != null)
+              )
+            else ...[
               Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _Chip(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: _StatusChip(
                   label: _isCopyrighted!
                       ? 'Copyrighted — license required'
                       : 'Public Domain',
@@ -642,6 +642,25 @@ class _StoryManagementPageState extends ConsumerState<StoryManagementPage> {
                   }),
                 ),
               ),
+              if (_isCopyrighted == true) ...[
+                ...List.generate(
+                  _copyrightLicenses.length,
+                  (i) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: _Chip(
+                      label: _copyrightLicenses[i],
+                      icon: Icons.gavel_rounded,
+                      onRemove: () =>
+                          setState(() => _copyrightLicenses.removeAt(i)),
+                    ),
+                  ),
+                ),
+                _AddItemButton(
+                  label: 'Add copyright license',
+                  onTap: _showAddCopyrightLicenseDialog,
+                ),
+              ],
+            ],
 
             const SizedBox(height: 24),
 
@@ -771,6 +790,130 @@ class _ProgressBar extends StatelessWidget {
   }
 }
 
+class _FormatHintRow extends StatelessWidget {
+  const _FormatHintRow({required this.icon, required this.hint});
+
+  final IconData icon;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: StudentTheme.secondaryGray),
+        const SizedBox(width: 6),
+        Text(
+          hint,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: StudentTheme.secondaryGray,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CoverPreview extends StatelessWidget {
+  const _CoverPreview({
+    required this.bytes,
+    required this.uploading,
+    required this.done,
+  });
+
+  final Uint8List? bytes;
+  final bool uploading;
+  final bool done;
+
+  Widget _buildContent() {
+    if (bytes == null) {
+      return Container(
+        color: StudentTheme.cardLightOrange,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.image_outlined,
+              size: 28,
+              color: StudentTheme.primaryOrange.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'No cover yet',
+              style: TextStyle(fontSize: 10, color: StudentTheme.secondaryGray),
+            ),
+          ],
+        ),
+      );
+    }
+    final image = Image.memory(bytes!, fit: BoxFit.cover);
+    if (uploading) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          image,
+          Container(color: Colors.black26),
+          const Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: StudentTheme.primaryOrange,
+            ),
+          ),
+        ],
+      );
+    }
+    if (done) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          image,
+          Positioned(
+            right: 6,
+            bottom: 6,
+            child: Icon(
+              Icons.check_circle_rounded,
+              size: 22,
+              color: Colors.green.shade600,
+            ),
+          ),
+        ],
+      );
+    }
+    return image;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SizedBox(
+        width: 120,
+        child: AspectRatio(
+          aspectRatio: 2 / 3,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: StudentTheme.cardLightOrange),
+                boxShadow: const [
+                  BoxShadow(
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
+                    color: Colors.black12,
+                  ),
+                ],
+              ),
+              child: _buildContent(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _DropdownField<T> extends StatelessWidget {
   const _DropdownField({
     required this.hint,
@@ -870,6 +1013,56 @@ class _AddItemButton extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({
+    required this.label,
+    required this.icon,
+    required this.onRemove,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: StudentTheme.cardLightOrange,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: StudentTheme.primaryOrange),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: StudentTheme.titleDark,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onRemove,
+            child: const Icon(
+              Icons.close_rounded,
+              size: 16,
+              color: StudentTheme.secondaryGray,
+            ),
+          ),
+        ],
       ),
     );
   }
