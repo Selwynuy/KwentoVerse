@@ -223,7 +223,7 @@ class _StoryManagementPageState extends ConsumerState<StoryManagementPage> {
       }).select('id').single();
 
       final storyId = row['id'] as String;
-      if (mounted) context.go('/educator/analytics/$storyId');
+      if (mounted) context.go('/educator/questionnaire/$storyId');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -435,7 +435,13 @@ class _StoryManagementPageState extends ConsumerState<StoryManagementPage> {
                       Icons.arrow_back_ios_new_rounded,
                       color: StudentTheme.titleDark,
                     ),
-                    onPressed: () => Navigator.of(context).maybePop(),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/educator/library');
+                      }
+                    },
                   ),
                   const Expanded(
                     child: Text(

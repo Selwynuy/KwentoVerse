@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:ui';
 
+import '../../../core/supabase/supabase_providers.dart';
 import '../../stories/data/downloaded_story_cache.dart';
+import '../../stories/data/story_cover_url.dart';
 import '../../stories/data/story_providers.dart';
 import '../../stories/domain/story.dart';
 import '../../../shared/images/local_file_image.dart';
@@ -381,28 +383,7 @@ class _HeroHeader extends StatelessWidget {
   }
 }
 
-class _HeroBackground extends StatelessWidget {
-  const _HeroBackground({required this.story});
-
-  final Story story;
-
-  @override
-  Widget build(BuildContext context) {
-    final provider = storyCoverProvider(story);
-    if (provider != null) {
-      return ImageFiltered(
-        imageFilter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image(image: provider, fit: BoxFit.cover),
-            Container(color: Colors.black.withValues(alpha: 0.30)),
-          ],
-        ),
-      );
-    }
-
-    return Container(
+Widget _heroGradient() => Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -415,39 +396,104 @@ class _HeroBackground extends StatelessWidget {
       ),
       child: Container(color: Colors.black.withValues(alpha: 0.22)),
     );
+
+class _HeroBackground extends ConsumerWidget {
+  const _HeroBackground({required this.story});
+
+  final Story story;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final client = ref.watch(supabaseClientProvider);
+    final bool hasStorage = story.coverStoragePath != null &&
+        story.coverStoragePath!.trim().isNotEmpty;
+    final localProvider = localFileImageProvider(story.localCoverPath);
+    final bool hasAsset = story.coverAssetPath != null &&
+        story.coverAssetPath!.trim().isNotEmpty;
+
+    Widget imageChild;
+    if (hasStorage) {
+      final url = storyCoverPublicUrl(client, story.coverStoragePath!);
+      imageChild = Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _heroGradient(),
+      );
+    } else if (localProvider != null) {
+      imageChild = Image(
+        image: localProvider,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _heroGradient(),
+      );
+    } else if (hasAsset) {
+      imageChild = Image.asset(
+        story.coverAssetPath!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _heroGradient(),
+      );
+    } else {
+      return _heroGradient();
+    }
+
+    return ImageFiltered(
+      imageFilter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          imageChild,
+          Container(color: Colors.black.withValues(alpha: 0.30)),
+        ],
+      ),
+    );
   }
 }
 
-ImageProvider? storyCoverProvider(Story story) {
-  // 1) local downloaded cover (mobile/desktop only)
-  final local = localFileImageProvider(story.localCoverPath);
-  if (local != null) return local;
+Widget _coverPlaceholder() => Container(
+      color: StudentTheme.cardLightOrange,
+      child: const Center(
+        child: Icon(Icons.auto_stories_rounded, size: 48, color: StudentTheme.primaryOrange),
+      ),
+    );
 
-  // 2) network cover (future: convert storage path -> signed/public url)
-  // If you later decide to store a full URL, set it here.
-  if (story.coverStoragePath != null && story.coverStoragePath!.trim().isNotEmpty) {
-    // Placeholder: treat as URL for now.
-    return NetworkImage(story.coverStoragePath!);
-  }
-
-  // 3) asset fallback
-  if (story.coverAssetPath != null && story.coverAssetPath!.trim().isNotEmpty) {
-    return AssetImage(story.coverAssetPath!);
-  }
-
-  return null;
-}
-
-class _CoverImage extends StatelessWidget {
+class _CoverImage extends ConsumerWidget {
   const _CoverImage({required this.story, required this.height});
 
   final Story story;
   final double height;
 
   @override
-  Widget build(BuildContext context) {
-    final provider = storyCoverProvider(story);
+  Widget build(BuildContext context, WidgetRef ref) {
     final width = height * 0.78;
+    final client = ref.watch(supabaseClientProvider);
+    final bool hasStorage = story.coverStoragePath != null &&
+        story.coverStoragePath!.trim().isNotEmpty;
+    final localProvider = localFileImageProvider(story.localCoverPath);
+    final bool hasAsset = story.coverAssetPath != null &&
+        story.coverAssetPath!.trim().isNotEmpty;
+
+    Widget child;
+    if (hasStorage) {
+      final url = storyCoverPublicUrl(client, story.coverStoragePath!);
+      child = Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _coverPlaceholder(),
+      );
+    } else if (localProvider != null) {
+      child = Image(
+        image: localProvider,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _coverPlaceholder(),
+      );
+    } else if (hasAsset) {
+      child = Image.asset(
+        story.coverAssetPath!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _coverPlaceholder(),
+      );
+    } else {
+      child = _coverPlaceholder();
+    }
 
     return Container(
       width: width,
@@ -466,14 +512,7 @@ class _CoverImage extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
-        child: provider == null
-            ? Container(
-                color: StudentTheme.cardLightOrange,
-                child: const Center(
-                  child: Icon(Icons.auto_stories_rounded, size: 48, color: StudentTheme.primaryOrange),
-                ),
-              )
-            : Image(image: provider, fit: BoxFit.cover),
+        child: child,
       ),
     );
   }

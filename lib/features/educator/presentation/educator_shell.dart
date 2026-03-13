@@ -59,7 +59,32 @@ class _EducatorShellState extends ConsumerState<EducatorShell> {
       data: (p) => p.avatarIndex,
       orElse: () => null,
     );
-    const levelLabel = 'Educator';
+
+    final role = ref.watch(authControllerProvider).role;
+    final isPrincipal = role == UserRole.principal;
+    final levelLabel = isPrincipal ? 'Principal' : 'Educator';
+
+    // Principal gets three dedicated sub-items; educators get the single
+    // School Settings shortcut.
+    final principalExtras = isPrincipal
+        ? [
+            HamburgerMenuExtra(
+              icon: Icons.people_alt_rounded,
+              label: 'Enrolled Students',
+              onTap: () => context.push('/principal/students'),
+            ),
+            HamburgerMenuExtra(
+              icon: Icons.badge_rounded,
+              label: 'Educators',
+              onTap: () => context.push('/principal/educators'),
+            ),
+            HamburgerMenuExtra(
+              icon: Icons.menu_book_rounded,
+              label: 'Story books',
+              onTap: () => context.push('/principal/stories'),
+            ),
+          ]
+        : <HamburgerMenuExtra>[];
 
     return Stack(
       children: [
@@ -92,9 +117,11 @@ class _EducatorShellState extends ConsumerState<EducatorShell> {
           avatarIndex: avatarIndex,
           onClose: _closeMenu,
           onProfile: () => context.push('/educator/profile'),
-          onProgress: () => context.push('/educator/school'),
+          // Educators keep the School Settings item; principals use extraItems.
+          onProgress: isPrincipal ? null : () => context.push('/educator/school'),
           progressLabel: 'School Settings',
           progressIcon: Icons.settings_rounded,
+          extraItems: principalExtras,
           onLogout: _handleLogout,
         ),
       ],

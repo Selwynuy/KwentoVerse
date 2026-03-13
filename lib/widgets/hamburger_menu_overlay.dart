@@ -2,6 +2,18 @@ import 'package:flutter/material.dart';
 
 import '../features/student/presentation/avatar_icons.dart';
 
+class HamburgerMenuExtra {
+  const HamburgerMenuExtra({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+}
+
 class HamburgerMenuOverlay extends StatelessWidget {
   const HamburgerMenuOverlay({
     super.key,
@@ -16,6 +28,7 @@ class HamburgerMenuOverlay extends StatelessWidget {
     this.onLogout,
     this.progressLabel = 'Progress',
     this.progressIcon,
+    this.extraItems = const [],
   });
 
   final bool isOpen;
@@ -29,6 +42,7 @@ class HamburgerMenuOverlay extends StatelessWidget {
   final VoidCallback? onLogout;
   final String progressLabel;
   final IconData? progressIcon;
+  final List<HamburgerMenuExtra> extraItems;
 
   static const _progressBarOrange = Color(0xFFFF9500);
 
@@ -87,6 +101,15 @@ class HamburgerMenuOverlay extends StatelessWidget {
                               label: progressLabel,
                               onTap: () {
                                 onProgress?.call();
+                                onClose?.call();
+                              },
+                            ),
+                          for (final extra in extraItems)
+                            _MenuItem(
+                              icon: extra.icon,
+                              label: extra.label,
+                              onTap: () {
+                                extra.onTap();
                                 onClose?.call();
                               },
                             ),

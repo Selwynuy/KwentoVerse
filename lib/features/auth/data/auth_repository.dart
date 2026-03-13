@@ -2,6 +2,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../application/auth_state.dart';
 
+class RevokedAccessException implements Exception {
+  const RevokedAccessException();
+}
+
 class AuthRepository {
   AuthRepository(this._client);
 
@@ -69,10 +73,13 @@ class AuthRepository {
   Future<UserRole?> _loadRole(String userId) async {
     final data = await _client
         .from('profiles')
-        .select('role')
+        .select('role, is_revoked')
         .eq('id', userId)
         .maybeSingle();
     if (data == null || data['role'] == null) return null;
+    if (data['is_revoked'] == true) {
+      throw RevokedAccessException();
+    }
     return _roleFromString(data['role'] as String?);
   }
 

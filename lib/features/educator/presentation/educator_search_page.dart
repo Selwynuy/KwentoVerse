@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/supabase/supabase_providers.dart';
+import '../../stories/data/story_cover_url.dart';
 import '../../stories/data/story_providers.dart';
 import '../../stories/domain/story.dart';
-import 'student_theme.dart';
+import '../../student/presentation/student_theme.dart';
 
 class EducatorSearchPage extends ConsumerStatefulWidget {
   const EducatorSearchPage({super.key});
@@ -167,41 +169,50 @@ class _EducatorSearchPageState extends ConsumerState<EducatorSearchPage> {
   }
 }
 
-class _BookCover extends StatelessWidget {
+class _BookCover extends ConsumerWidget {
   const _BookCover({required this.story});
   final Story story;
 
+  static Widget _placeholder() => const Center(
+        child: Icon(
+          Icons.auto_stories_rounded,
+          size: 48,
+          color: StudentTheme.primaryOrange,
+        ),
+      );
+
   @override
-  Widget build(BuildContext context) {
-    final imageProvider = _coverImageProvider(story);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final client = ref.watch(supabaseClientProvider);
+    final String? networkUrl = story.coverStoragePath != null &&
+            story.coverStoragePath!.trim().isNotEmpty
+        ? storyCoverPublicUrl(client, story.coverStoragePath!)
+        : null;
+    final String? assetPath = story.coverAssetPath != null &&
+            story.coverAssetPath!.trim().isNotEmpty
+        ? story.coverAssetPath
+        : null;
+
     return Container(
       decoration: BoxDecoration(
         color: StudentTheme.cardLightOrange,
         borderRadius: BorderRadius.circular(12),
       ),
       clipBehavior: Clip.antiAlias,
-      child: imageProvider == null
-          ? const Center(
-              child: Icon(
-                Icons.auto_stories_rounded,
-                size: 48,
-                color: StudentTheme.primaryOrange,
-              ),
+      child: networkUrl != null
+          ? Image.network(
+              networkUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _placeholder(),
             )
-          : Image(image: imageProvider, fit: BoxFit.cover),
+          : assetPath != null
+              ? Image.asset(
+                  assetPath,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _placeholder(),
+                )
+              : _placeholder(),
     );
-  }
-
-  ImageProvider? _coverImageProvider(Story story) {
-    if (story.coverStoragePath != null &&
-        story.coverStoragePath!.trim().isNotEmpty) {
-      return NetworkImage(story.coverStoragePath!);
-    }
-    if (story.coverAssetPath != null &&
-        story.coverAssetPath!.trim().isNotEmpty) {
-      return AssetImage(story.coverAssetPath!);
-    }
-    return null;
   }
 }
 

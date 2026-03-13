@@ -9,7 +9,31 @@ class SupabaseStoryRepository {
 
   static const _timeout = Duration(seconds: 12);
 
+  /// Student-facing: excludes archived stories.
   Future<List<Story>> listStoriesForSchool({
+    String? schoolId,
+    String? query,
+  }) async {
+    dynamic q = _client.from('stories').select('*').eq('is_archived', false);
+
+    if (schoolId != null && schoolId.isNotEmpty) {
+      q = q.eq('school_id', schoolId);
+    }
+
+    if (query != null && query.trim().isNotEmpty) {
+      q = q.ilike('title', '%${query.trim()}%');
+    }
+
+    q = q.order('created_at', ascending: false);
+    final List<dynamic> rows = await q.timeout(_timeout);
+    return rows
+        .whereType<Map<String, dynamic>>()
+        .map(mapRowToStory)
+        .toList(growable: false);
+  }
+
+  /// Educator/principal-facing: includes archived stories.
+  Future<List<Story>> listAllStoriesForSchool({
     String? schoolId,
     String? query,
   }) async {

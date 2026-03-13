@@ -55,11 +55,20 @@ final storiesForSchoolProvider =
 });
 
 /// Stories for the current user's school. Used for library and exercises.
+/// Student-facing: excludes archived stories.
 final currentUserSchoolStoriesProvider = FutureProvider<List<Story>>((ref) async {
   final schoolRepo = ref.watch(schoolRepositoryProvider);
   final storyRepo = ref.watch(supabaseStoryRepositoryProvider);
   final schoolId = await schoolRepo.getCurrentUserSchoolId();
   return storyRepo.listStoriesForSchool(schoolId: schoolId);
+});
+
+/// Educator-facing: includes archived stories (so educators can still see their uploads).
+final educatorSchoolStoriesProvider = FutureProvider<List<Story>>((ref) async {
+  final schoolRepo = ref.watch(schoolRepositoryProvider);
+  final storyRepo = ref.watch(supabaseStoryRepositoryProvider);
+  final schoolId = await schoolRepo.getCurrentUserSchoolId();
+  return storyRepo.listAllStoriesForSchool(schoolId: schoolId);
 });
 
 /// Current user's rating for a story (1–5), or null if not rated.

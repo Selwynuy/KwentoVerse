@@ -32,6 +32,10 @@ class SchoolRepository {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) throw StateError('Not authenticated');
     await _client.from('profiles').update({'school_id': schoolId}).eq('id', userId);
+    await _client.from('school_educators').upsert(
+      {'school_id': schoolId, 'user_id': userId},
+      onConflict: 'school_id,user_id',
+    );
   }
 
   /// Returns the current user's school_id if set.

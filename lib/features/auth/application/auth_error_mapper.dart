@@ -1,6 +1,11 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../data/auth_repository.dart';
+
 String mapAuthErrorToFriendlyMessage(Object error) {
+  if (error is RevokedAccessException) {
+    return 'Your access has been revoked by your principal.';
+  }
   if (error is AuthException) {
     final code = (error is AuthApiException) ? error.code : null;
 

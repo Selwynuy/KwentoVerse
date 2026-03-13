@@ -22,8 +22,11 @@ import '../../features/educator/presentation/school_settings_page.dart'
 import '../../features/educator/presentation/story_readers_page.dart';
 import '../../features/educator/presentation/student_progress_view.dart';
 import '../../features/educator/presentation/educator_profile_page.dart';
-import '../../features/educator/presentation/story_analytics_page.dart';
+import '../../features/educator/presentation/questionnaire_creation_page.dart';
 import '../../features/educator/presentation/story_management_page.dart';
+import '../../features/principal/presentation/principal_educators_page.dart';
+import '../../features/principal/presentation/principal_enrolled_students_page.dart';
+import '../../features/principal/presentation/principal_story_books_page.dart';
 import '../../features/student/presentation/student_shell.dart';
 import '../../features/student/presentation/student_home_page.dart';
 import '../../features/student/presentation/story_library_page.dart';
@@ -52,6 +55,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 
       final isProtected = path.startsWith('/student') ||
           path.startsWith('/educator') ||
+          path.startsWith('/principal') ||
           path.startsWith('/admin') ||
           path == '/settings';
 
@@ -77,6 +81,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             role != UserRole.principal) {
           return _homeFor(role);
         }
+        if (path.startsWith('/principal') && role != UserRole.principal) return _homeFor(role);
         if (path.startsWith('/admin') && role != UserRole.admin) return _homeFor(role);
       }
 
@@ -151,14 +156,32 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) =>
                 const educator_school.EducatorSchoolSettingsPage(),
           ),
-          GoRoute(
-            path: '/educator/analytics/:id',
-            builder: (context, state) => StoryAnalyticsPage(storyId: state.pathParameters['id']!),
-          ),
           GoRoute(path: '/educator/profile', builder: (context, state) => const EducatorProfilePage()),
         ],
       ),
 
+      GoRoute(
+        path: '/educator/questionnaire/:storyId',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => QuestionnaireCreationPage(
+          storyId: state.pathParameters['storyId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/principal/educators',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PrincipalEducatorsPage(),
+      ),
+      GoRoute(
+        path: '/principal/students',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PrincipalEnrolledStudentsPage(),
+      ),
+      GoRoute(
+        path: '/principal/stories',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PrincipalStoryBooksPage(),
+      ),
       GoRoute(
         path: '/educator/stories',
         parentNavigatorKey: _rootNavigatorKey,
