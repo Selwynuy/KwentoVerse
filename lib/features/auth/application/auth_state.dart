@@ -87,6 +87,47 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
+  Future<void> loginWithUsername({
+    required String username,
+    required String password,
+  }) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    final repo = ref.read(authRepositoryProvider);
+    try {
+      final role = await repo.loginWithUsername(username: username, password: password);
+      if (role == null) {
+        state =
+            const AuthState.unauthenticated().copyWith(errorMessage: 'Unable to determine user role.');
+        return;
+      }
+      state = AuthState.authenticated(role);
+    } catch (e) {
+      state = const AuthState.unauthenticated().copyWith(
+        errorMessage: mapAuthErrorToFriendlyMessage(e, isUsernameLogin: true),
+      );
+    }
+  }
+
+  Future<bool> registerStudent({
+    required String username,
+    required String password,
+    DateTime? birthday,
+  }) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    final repo = ref.read(authRepositoryProvider);
+    try {
+      await repo.registerStudent(username: username, password: password, birthday: birthday);
+      await repo.logout();
+      state = const AuthState.unauthenticated();
+      return true;
+    } catch (e) {
+      state = const AuthState.unauthenticated().copyWith(
+        errorMessage: mapAuthErrorToFriendlyMessage(e, isUsernameSignup: true),
+      );
+      return false;
+    }
+  }
+
   Future<bool> register({
     required String email,
     required String password,

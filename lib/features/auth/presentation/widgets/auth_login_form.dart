@@ -12,6 +12,7 @@ class AuthLoginForm extends ConsumerStatefulWidget {
     required this.buttonText,
     required this.toggleText,
     required this.onToggle,
+    this.useUsername = false,
   });
 
   final String title;
@@ -19,6 +20,7 @@ class AuthLoginForm extends ConsumerStatefulWidget {
   final String buttonText;
   final String toggleText;
   final VoidCallback onToggle;
+  final bool useUsername;
 
   @override
   ConsumerState<AuthLoginForm> createState() => _AuthLoginFormState();
@@ -43,9 +45,9 @@ class _AuthLoginFormState extends ConsumerState<AuthLoginForm> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color),
+        border: Border.all(color: Colors.black87),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       child: Column(
@@ -53,35 +55,36 @@ class _AuthLoginFormState extends ConsumerState<AuthLoginForm> {
         children: [
           Text(
             widget.title,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: color,
+              color: Colors.black87,
             ),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
+            keyboardType:
+                widget.useUsername ? TextInputType.text : TextInputType.emailAddress,
             style: const TextStyle(fontSize: 13),
             decoration: InputDecoration(
-              labelText: 'Email',
-              labelStyle: TextStyle(
-                color: color,
+              labelText: widget.useUsername ? 'Username' : 'Email',
+              labelStyle: const TextStyle(
+                color: Colors.black87,
                 fontSize: 12,
               ),
-              hintStyle: TextStyle(
-                color: color.withValues(alpha: 0.8),
+              hintStyle: const TextStyle(
+                color: Colors.black54,
                 fontSize: 12,
               ),
-              border: OutlineInputBorder(
-                borderSide: BorderSide(color: color),
+              border: const OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.black87),
               ),
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: color),
+              enabledBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.black87),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: color),
+              focusedBorder: const OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.black87),
               ),
             ),
           ),
@@ -90,24 +93,24 @@ class _AuthLoginFormState extends ConsumerState<AuthLoginForm> {
             controller: _passwordController,
             obscureText: true,
             style: const TextStyle(fontSize: 13),
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: 'Password',
               labelStyle: TextStyle(
-                color: color,
+                color: Colors.black87,
                 fontSize: 12,
               ),
               hintStyle: TextStyle(
-                color: color.withValues(alpha: 0.8),
+                color: Colors.black54,
                 fontSize: 12,
               ),
               border: OutlineInputBorder(
-                borderSide: BorderSide(color: color),
+                borderSide: BorderSide(color: Colors.black87),
               ),
               enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: color),
+                borderSide: BorderSide(color: Colors.black87),
               ),
               focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: color),
+                borderSide: BorderSide(color: Colors.black87),
               ),
             ),
           ),
@@ -158,9 +161,14 @@ class _AuthLoginFormState extends ConsumerState<AuthLoginForm> {
   }
 
   Future<void> _onLogin() async {
-    final email = _emailController.text.trim();
+    final identifier = _emailController.text.trim();
     final password = _passwordController.text;
-    await ref.read(authControllerProvider.notifier).login(email: email, password: password);
+    final notifier = ref.read(authControllerProvider.notifier);
+    if (widget.useUsername) {
+      await notifier.loginWithUsername(username: identifier, password: password);
+    } else {
+      await notifier.login(email: identifier, password: password);
+    }
 
     if (!mounted) return;
     final auth = ref.read(authControllerProvider);
@@ -172,15 +180,7 @@ class _AuthLoginFormState extends ConsumerState<AuthLoginForm> {
 
     if (!auth.isAuthenticated || auth.role == null) return;
 
-    if (auth.role == UserRole.student) {
-      // For now, always send logged-in students to avatar selection.
-      // Later this can be gated by a "hasAvatar" flag on the user profile.
-      context.go('/student/avatar-select');
-      return;
-    }
-
-    // For non-student roles, let the global router redirect
-    // the user to the correct shell based on their role.
+    // Let the global router redirect handle routing based on role + avatar status.
     context.go('/');
   }
 }

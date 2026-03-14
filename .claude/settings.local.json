@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"D:\\\\Projects\\\\KwentoVerse\" && flutter analyze --no-fatal-infos 2>&1 | head -100)",
+      "Bash(cd \"D:\\\\Projects\\\\KwentoVerse\" && flutter analyze --no-fatal-infos 2>&1 | tail -10)",
+      "Bash(cd \"D:\\\\Projects\\\\KwentoVerse\" && flutter analyze --no-fatal-infos 2>&1 | tail -15)",
+      "Bash(cd \"D:\\\\Projects\\\\KwentoVerse\" && flutter analyze --no-fatal-infos 2>&1 | tail -12)",
+      "Bash(find \"D:\\\\Projects\\\\KwentoVerse\\\\lib\" -name \"*toast*\" -o -name \"*snack*\" -o -name \"*helper*\" 2>/dev/null | head -20)",
+      "Bash(find /d/Projects/KwentoVerse -name \"*.sql\" | xargs cat | grep -A 20 \"quiz_questions\")",
+      "Bash(find /d/Projects/KwentoVerse -name \"*.dart\" | xargs grep -l \"quiz_questions\" | head -10)",
+      "Bash(find /d/Projects/KwentoVerse/lib -name \"*.dart\" | xargs grep -l \"stories\" | grep -E \"domain|data\" | head -5)",
+      "Bash(flutter analyze:*)",
+      "Bash(find \"D:\\\\Projects\\\\KwentoVerse/lib\" -name \"*style*\" -o -name \"*theme*\" -o -name \"*color*\" | grep -E \"\\\\.\\(dart\\)$\")",
+      "Bash(find \"D:\\\\Projects\\\\KwentoVerse/lib\" -name \"*.dart\" | xargs grep -l \"scaffoldBackgroundColor\\\\|Surface\\\\|background\" | head -10)"
+    ]
+  }
+}

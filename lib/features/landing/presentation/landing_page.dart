@@ -7,35 +7,43 @@ class LandingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 20),
-              Image.asset(
-                'assets/kwentoverse_logo.png',
-                width: 240,
-                height: 240,
-                filterQuality: FilterQuality.none,
-              ),
-              const SizedBox(height: 32),
-              _RoleButton(
-                label: 'Student',
-                background: const Color(0xFFF59E0B),
-                foreground: Colors.white,
-                onTap: () => context.go('/login'),
-              ),
-              const SizedBox(height: 12),
-              _RoleButton(
-                label: 'Educator',
-                background: const Color(0xFF0B3B66),
-                foreground: Colors.white,
-                onTap: () => context.go('/login-educator'),
-              ),
-              const SizedBox(height: 120),
-            ],
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/background.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 20),
+                Image.asset(
+                  'assets/kwentoverse_logo.png',
+                  width: 240,
+                  height: 240,
+                  filterQuality: FilterQuality.none,
+                ),
+                const SizedBox(height: 32),
+                _RoleButton(
+                  label: 'Student',
+                  background: const Color(0xFFF59E0B),
+                  foreground: Colors.white,
+                  onTap: () => context.go('/login'),
+                ),
+                const SizedBox(height: 12),
+                _RoleButton(
+                  label: 'Educator',
+                  background: const Color(0xFF0B3B66),
+                  foreground: Colors.white,
+                  onTap: () => context.go('/login-educator'),
+                ),
+                const SizedBox(height: 120),
+              ],
+            ),
           ),
         ),
       ),

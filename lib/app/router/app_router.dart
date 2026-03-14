@@ -27,6 +27,8 @@ import '../../features/educator/presentation/story_management_page.dart';
 import '../../features/principal/presentation/principal_educators_page.dart';
 import '../../features/principal/presentation/principal_enrolled_students_page.dart';
 import '../../features/principal/presentation/principal_story_books_page.dart';
+import '../../features/student/data/student_profile_providers.dart';
+import '../../features/student/data/student_profile_repository.dart';
 import '../../features/student/presentation/student_shell.dart';
 import '../../features/student/presentation/student_home_page.dart';
 import '../../features/student/presentation/story_library_page.dart';
@@ -71,6 +73,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
               path == '/register-educator' ||
               path == '/onboarding')) {
         return _homeFor(role ?? UserRole.student);
+      }
+
+      // Students without an avatar must pick one first.
+      if (isLoggedIn && role == UserRole.student) {
+        final profileAsync = ref.read(myStudentProfileProvider);
+        final avatarIndex = profileAsync.value?.avatarIndex;
+        final hasAvatar = avatarIndex != null;
+        if (!hasAvatar && path != '/student/avatar-select') {
+          return '/student/avatar-select';
+        }
+        if (hasAvatar && path == '/student/avatar-select') {
+          return '/student/home';
+        }
       }
 
       // Guard wrong shell access (minimal; refine later).
@@ -242,15 +257,20 @@ String _homeFor(UserRole role) {
 
 class _GoRouterRefresh extends ChangeNotifier {
   _GoRouterRefresh(this.ref) {
-    _remove = ref.listen<AuthState>(authControllerProvider, (prev, next) => notifyListeners()).close;
+    _removeAuth = ref.listen<AuthState>(authControllerProvider, (_, next) => notifyListeners()).close;
+    _removeProfile = ref
+        .listen<AsyncValue<StudentProfile>>(myStudentProfileProvider, (_, next) => notifyListeners())
+        .close;
   }
 
   final Ref ref;
-  late final void Function() _remove;
+  late final void Function() _removeAuth;
+  late final void Function() _removeProfile;
 
   @override
   void dispose() {
-    _remove();
+    _removeAuth();
+    _removeProfile();
     super.dispose();
   }
 }

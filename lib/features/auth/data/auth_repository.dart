@@ -9,7 +9,56 @@ class RevokedAccessException implements Exception {
 class AuthRepository {
   AuthRepository(this._client);
 
+  // Use a valid-looking domain so Supabase's email validator accepts it (.internal is often rejected).
+  static const _studentEmailDomain = 'student.kwentoverse.com';
+
   final SupabaseClient _client;
+
+  Future<UserRole?> loginWithUsername({
+    required String username,
+    required String password,
+  }) async {
+    final email = '$username@$_studentEmailDomain';
+    final response = await _client.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
+    final user = response.user;
+    if (user == null) return null;
+    return _loadRole(user.id);
+  }
+
+  Future<void> registerStudent({
+    required String username,
+    required String password,
+    DateTime? birthday,
+  }) async {
+    final email = '$username@$_studentEmailDomain';
+    final response = await _client.auth.signUp(
+      email: email,
+      password: password,
+      data: {
+        'full_name': username,
+        'role': 'student',
+      },
+    );
+    final user = response.user;
+    if (user == null) throw Exception('Sign up did not return a user');
+
+    try {
+      await _client.from('profiles').upsert({
+        'id': user.id,
+        'full_name': username,
+        'username': username,
+        'role': 'student',
+        if (birthday != null) 'birthday': birthday.toIso8601String().split('T').first,
+      });
+    } on PostgrestException catch (e) {
+      if (e.code != '42501') rethrow;
+    }
+
+    await _client.auth.signOut();
+  }
 
   Future<UserRole?> login({
     required String email,

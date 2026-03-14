@@ -74,6 +74,13 @@ flutter:
 
   assets:
     - assets/kwentoverse_logo.png
+    - assets/background.png
+    - assets/avatar-1.png
+    - assets/avatar-2.png
+    - assets/avatar-3.png
+    - assets/avatar-4.png
+    - assets/avatar-5.png
+    - assets/avatar-6.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

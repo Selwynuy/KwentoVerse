@@ -2,7 +2,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/auth_repository.dart';
 
-String mapAuthErrorToFriendlyMessage(Object error) {
+String mapAuthErrorToFriendlyMessage(
+  Object error, {
+  bool isUsernameLogin = false,
+  bool isUsernameSignup = false,
+}) {
   if (error is RevokedAccessException) {
     return 'Your access has been revoked by your principal.';
   }
@@ -13,9 +17,13 @@ String mapAuthErrorToFriendlyMessage(Object error) {
       case 'email_not_confirmed':
         return 'Please confirm your email first, then try logging in.';
       case 'invalid_login_credentials':
-        return 'Incorrect email or password.';
+        return isUsernameLogin
+            ? 'Incorrect username or password.'
+            : 'Incorrect email or password.';
       case 'user_already_exists':
-        return 'An account with this email already exists. Try logging in instead.';
+        return isUsernameSignup
+            ? 'This username is already taken.'
+            : 'An account with this email already exists. Try logging in instead.';
       case 'signup_disabled':
         return 'Sign up is currently disabled. Please contact your school admin.';
     }
